@@ -1,0 +1,2 @@
+chmod +x uninstall_moneroocean.sh
+./uninstall_moneroocean.sh
