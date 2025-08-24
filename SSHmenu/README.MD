@@ -6,5 +6,5 @@
 
 
 <p align="center">
-  <img src="images/menuSSH.png" width="400">
+  <img src="images/menussh.png" width="400">
 </p>
