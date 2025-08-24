@@ -3,6 +3,8 @@
 - Fetch list of machine from Config file in .ssh folder
 - added color to the menu
 
-```
-![Alt text](menuSSH.PNG)
-```
+
+
+<p align="center">
+  <img src="menuSSH.png" width="400">
+</p>
