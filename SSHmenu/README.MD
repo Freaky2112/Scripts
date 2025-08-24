@@ -4,5 +4,5 @@
 - added color to the menu
 
 ```
-![Alt text](SSHmenu/menuSSH.PNG)
+![Alt text](menuSSH.PNG)
 ```
