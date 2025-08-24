@@ -10,9 +10,4 @@
 </p>
 
 
-[
-]()
-
-<p align="center">
-  <img src="menuSSH.png" width="400">
-</p>
+![Screenshot](images/menuSSH.png)
