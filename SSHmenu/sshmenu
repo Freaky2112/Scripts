@@ -1,45 +1,51 @@
 #!/bin/bash
 CONFIG_FILE="$HOME/.ssh/config"
+LAST_FILE="$HOME/.ssh/.last_ssh_host"
 
-# Extract aliases, strip Host *, clean whitespace
+# Extract aliases
 HOSTS=$(grep -E '^[[:space:]]*Host[[:space:]]+' "$CONFIG_FILE" \
     | sed -E 's/^[[:space:]]*Host[[:space:]]+//' \
     | grep -v '^\*' \
     | tr -d '\r' \
     | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
 
-HOST_ARRAY=($HOSTS)
+declare -A HOST_MAP
+MENU=()
 
-# Colors
-RED='\033[0;31;43m'
-GREEN='\033[1;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-PURPLE='\033[1;35m'
-WHITE='\033[0;37m'
-RESET='\033[0m'
+# Optional "Last connected"
+if [[ -f "$LAST_FILE" ]]; then
+    LAST=$(cat "$LAST_FILE")
+    MENU+=("Last" "Reconnect to $LAST")
+fi
 
-echo -e "${CYAN}==========================="
-echo -e "        SSH Menu"
-echo -e "    Choose Your Server"
-echo -e "===========================${RESET}"
-
-# Print menu manually (prettier than plain select)
-i=1
-for h in "${HOST_ARRAY[@]}"; do
-    echo -e "${YELLOW}$i)${RESET} ${GREEN}$h${RESET}"
-    ((i++))
+# Build the rest of the menu
+for alias in $HOSTS; do
+    ip=$(awk -v host="$alias" '
+        $1=="Host" && $2==host {found=1; next}
+        found && tolower($1)=="hostname" {print $2; exit}
+    ' "$CONFIG_FILE")
+    MENU+=("$alias" "$ip")
+    HOST_MAP["$alias"]="$ip"
 done
-echo -e "${YELLOW}$i)${RESET} ${PURPLE}Quit${RESET}"
 
-read -p "Choose a server: " choice
+# Show whiptail menu
+CHOICE=$(whiptail --title "SSH Server Menu" \
+    --menu "Select a server to connect:" 20 70 10 \
+    "${MENU[@]}" \
+    3>&1 1>&2 2>&3)
 
-if [[ $choice -ge 1 && $choice -le ${#HOST_ARRAY[@]} ]]; then
-    HOST="${HOST_ARRAY[$((choice-1))]}"
-    echo -e "Connecting to ${GREEN}$HOST${RESET}..."
+exitstatus=$?
+
+if [ $exitstatus -eq 0 ]; then
+    if [[ "$CHOICE" == "Last" ]]; then
+        HOST="$LAST"
+        echo "Reconnecting to $HOST..."
+    else
+        HOST="$CHOICE"
+        echo "Connecting to $HOST (${HOST_MAP[$HOST]})..."
+    fi
+    echo "$HOST" > "$LAST_FILE"
     ssh "$HOST"
-elif [[ $choice -eq $i ]]; then
-    echo -e "${WHITE}Bye!${RESET}"
 else
-    echo -e "${RED}>>> Invalid choice. <<<${RESET}"
+    echo "Cancelled."
 fi
