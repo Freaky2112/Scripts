@@ -1,4 +1,5 @@
 #!/bin/bash
+# create_sshkey_whiptail.sh
 # Generate an SSH key with chosen encryption method using whiptail dialogs.
 
 KEY_DIR="$HOME/.ssh"
@@ -60,10 +61,19 @@ if (whiptail --yesno "Do you want to copy the key to a server?" 10 50); then
     # Run ssh-copy-id and capture errors
     if ssh-copy-id -i "$KEY_PATH.pub" "$REMOTE" 2>/tmp/sshcopy_error.log; then
         whiptail --msgbox "✅ Key successfully copied to $REMOTE" 10 50
+        
+        # --- Test passwordless login ---
+        if ssh -o BatchMode=yes -o ConnectTimeout=5 "$REMOTE" "echo 'Connected successfully'" 2>/tmp/sshlogin_error.log; then
+            whiptail --msgbox "🎉 Passwordless login works for $REMOTE" 10 60
+        else
+            ERROR_MSG=$(< /tmp/sshlogin_error.log)
+            whiptail --msgbox "⚠️ Key copied, but login test failed.\n\nError:\n$ERROR_MSG" 15 70
+        fi
+
     else
         ERROR_MSG=$(< /tmp/sshcopy_error.log)
         whiptail --msgbox "❌ Failed to copy key to $REMOTE\n\nError:\n$ERROR_MSG" 15 70
     fi
 fi
 
-whiptail --msgbox "🎉 All done!" 10 40
+whiptail --msgbox "✨ All done!" 10 40
