@@ -1,5 +1,6 @@
 #!/bin/bash
-# Full-featured SSH Key & Server Manager with config updates and history
+# ssh_key_manager.sh
+# Full-featured SSH Key & Server Manager with config, history, and direct connect
 
 KEY_DIR="$HOME/.ssh"
 HISTORY_FILE="$HOME/.ssh_manager_history"
@@ -72,10 +73,8 @@ update_ssh_config() {
     local user="$2"
     local host="$3"
 
-    # Remove old entry for host
     awk -v h="$host" 'BEGIN{skip=0} /^Host /{skip=($2==h)?1:0} !skip{print}' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 
-    # Add new entry
     {
         echo ""
         echo "Host $host"
@@ -96,11 +95,8 @@ copy_key() {
 
     if ssh-copy-id -i "$KEY_DIR/$KEY_FILE.pub" "$REMOTE" 2>/tmp/sshcopy_error.log; then
         whiptail --msgbox "✅ Key successfully copied to $REMOTE" 10 60
-
-        # Update SSH config
         update_ssh_config "$KEY_FILE" "$USERNAME" "$HOSTNAME"
 
-        # Test login
         if ssh -i "$KEY_DIR/$KEY_FILE" -o BatchMode=yes -o ConnectTimeout=5 "$REMOTE" "echo 'Connected successfully'" 2>/tmp/sshlogin_error.log; then
             whiptail --msgbox "🎉 Passwordless login works for $REMOTE" 10 60
             save_history "$KEY_FILE" "$REMOTE" "success"
@@ -129,6 +125,26 @@ test_login() {
         save_history "$KEY_FILE" "$REMOTE" "fail"
     fi
 }
+
+connect_server() {
+    # Only read actual Host entries from SSH config, ignoring comments and wildcards
+    HOSTS=$(awk '/^Host[[:space:]]+/ {print $2}' "$CONFIG_FILE" | grep -v '\*')
+    [ -z "$HOSTS" ] && { whiptail --msgbox "No hosts found in SSH config!" 10 50; return; }
+
+    # Build whiptail menu
+    MENU_ITEMS=()
+    for h in $HOSTS; do
+        MENU_ITEMS+=("$h" "")
+    done
+
+    SELECTED_HOST=$(whiptail --title "Connect to Server" --menu "Select a host to connect:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || return
+
+    if [ -n "$SELECTED_HOST" ]; then
+        whiptail --msgbox "Connecting to $SELECTED_HOST...\nUse Ctrl+D or 'exit' to return to menu" 10 60
+        ssh "$SELECTED_HOST"
+    fi
+}
+
 list_keys() {
     KEYS=$(ls "$KEY_DIR" | grep -vE "(\.pub|known_hosts|known_hosts.old|config|authorized_keys)$" || echo "No keys found")
     whiptail --msgbox "📂 Existing SSH Keys in ~/.ssh:\n\n$KEYS" 20 60
@@ -149,38 +165,17 @@ delete_key() {
     fi
 }
 
-connect_server() {
-    # List all hosts in ~/.ssh/config
-    HOSTS=$(awk '/^Host / {print $2}' "$CONFIG_FILE")
-    [ -z "$HOSTS" ] && { whiptail --msgbox "No hosts found in SSH config!" 10 50; return; }
-
-    # Build whiptail menu
-    MENU_ITEMS=()
-    for h in $HOSTS; do
-        MENU_ITEMS+=("$h" "")
-    done
-
-    SELECTED_HOST=$(whiptail --title "Connect to Server" --menu "Select a host to connect:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || return
-
-    # Open SSH connection
-    if [ -n "$SELECTED_HOST" ]; then
-        whiptail --msgbox "Connecting to $SELECTED_HOST...\nUse Ctrl+D or exit to return to menu" 10 60
-        ssh "$SELECTED_HOST"
-    fi
-}
-
-
 # --- Main Menu Loop ---
 while true; do
-    CHOICE=$(whiptail --title "🔑 SSH Key Manager" --menu "Choose an option:" 20 60 12 \
-    "1" "Generate new SSH key" \
-    "2" "Copy key to server & update config" \
-    "3" "Test passwordless login" \
-    "4" "List existing keys" \
-    "5" "Delete a key" \
-    "6" "Show server history with status" \
-    "7" "Connect to server using SSH config"\
-    "8" "Exit" 3>&1 1>&2 2>&3)
+    CHOICE=$(whiptail --title "🔑 SSH Key Manager" --menu "Choose an option:" 20 60 14 \
+        "1" "Generate new SSH key" \
+        "2" "Copy key to server & update config" \
+        "3" "Test passwordless login" \
+        "4" "List existing keys" \
+        "5" "Delete a key" \
+        "6" "Show server history with status" \
+        "7" "Connect to server using SSH config" \
+        "8" "Exit" 3>&1 1>&2 2>&3)
 
     [ $? -ne 0 ] && exit 0
 
