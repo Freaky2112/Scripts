@@ -149,6 +149,26 @@ delete_key() {
     fi
 }
 
+connect_server() {
+    # List all hosts in ~/.ssh/config
+    HOSTS=$(awk '/^Host / {print $2}' "$CONFIG_FILE")
+    [ -z "$HOSTS" ] && { whiptail --msgbox "No hosts found in SSH config!" 10 50; return; }
+
+    # Build whiptail menu
+    MENU_ITEMS=()
+    for h in $HOSTS; do
+        MENU_ITEMS+=("$h" "")
+    done
+
+    SELECTED_HOST=$(whiptail --title "Connect to Server" --menu "Select a host to connect:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || return
+
+    # Open SSH connection
+    if [ -n "$SELECTED_HOST" ]; then
+        whiptail --msgbox "Connecting to $SELECTED_HOST...\nUse Ctrl+D or exit to return to menu" 10 60
+        ssh "$SELECTED_HOST"
+    fi
+}
+
 
 # --- Main Menu Loop ---
 while true; do
@@ -159,7 +179,8 @@ while true; do
     "4" "List existing keys" \
     "5" "Delete a key" \
     "6" "Show server history with status" \
-    "7" "Exit" 3>&1 1>&2 2>&3)
+    "7" "Connect to server using SSH config"\
+    "8" "Exit" 3>&1 1>&2 2>&3)
 
     [ $? -ne 0 ] && exit 0
 
@@ -170,6 +191,7 @@ while true; do
         4) list_keys ;;
         5) delete_key ;;
         6) list_history ;;
-        7) exit 0 ;;
+        7) connect_server ;;
+        8) exit 0 ;;
     esac
 done
