@@ -129,25 +129,26 @@ test_login() {
         save_history "$KEY_FILE" "$REMOTE" "fail"
     fi
 }
-
 list_keys() {
-    KEYS=$(ls "$KEY_DIR" | grep -v ".pub" || echo "No keys found")
+    KEYS=$(ls "$KEY_DIR" | grep -vE "(\.pub|known_hosts|known_hosts.old|config|authorized_keys)$" || echo "No keys found")
     whiptail --msgbox "📂 Existing SSH Keys in ~/.ssh:\n\n$KEYS" 20 60
 }
 
 delete_key() {
-    KEYS=$(ls "$KEY_DIR" | grep -v ".pub")
+    KEYS=$(ls "$KEY_DIR" | grep -vE "(\.pub|known_hosts|known_hosts.old|config|authorized_keys)$")
     [ -z "$KEYS" ] && { whiptail --msgbox "No keys to delete!" 10 40; return; }
 
     KEY_FILE=$(whiptail --menu "Select key to delete:" 20 60 10 $(for k in $KEYS; do echo "$k" "$k"; done) 3>&1 1>&2 2>&3) || return
 
     if (whiptail --yesno "Are you sure you want to delete $KEY_FILE and its .pub file?" 10 60); then
         rm -f "$KEY_DIR/$KEY_FILE" "$KEY_DIR/$KEY_FILE.pub"
+        # Remove from history
         grep -v "^$KEY_FILE|" "$HISTORY_FILE" > "$HISTORY_FILE.tmp" 2>/dev/null
         mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
         whiptail --msgbox "🗑️ $KEY_FILE deleted successfully" 10 50
     fi
 }
+
 
 # --- Main Menu Loop ---
 while true; do
