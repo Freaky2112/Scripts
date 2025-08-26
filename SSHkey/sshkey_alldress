@@ -77,7 +77,7 @@ update_ssh_config() {
 
     {
         echo ""
-        echo "Host $host"
+        echo "Host $key"
         echo "    HostName $host"
         echo "    User $user"
         echo "    IdentityFile $KEY_DIR/$key"
