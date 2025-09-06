@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # create_sshkey_whiptail.sh
 # Generate an SSH key with chosen encryption method using whiptail dialogs.
 

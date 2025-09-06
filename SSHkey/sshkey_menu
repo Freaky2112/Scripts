@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Advanced SSH Key & Server Manager with history tracking
 
 KEY_DIR="$HOME/.ssh"

@@ -1,5 +1,5 @@
-#!/bin/bash
-# create_sshkey_ed25519.sh
+#!/usr/bin/env bash
+#!/bin/bash# create_sshkey_ed25519.sh
 # Generate an ED25519 SSH key and optionally copy it to a remote server.
 
 KEY_DIR="$HOME/.ssh"
