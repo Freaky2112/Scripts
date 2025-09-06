@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# pick a random line from the prompts file
+PROMPT=$(shuf -n 1 ~/.bin/.sudo_prompts)
+
+# run sudo with this prompt
+sudo -p "$PROMPT" "$@"
