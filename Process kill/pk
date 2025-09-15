@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Process Killer Menu with whiptail
 
+# Set Color for Background in Whiptail
+export NEWT_COLORS='
+    root=,blue
+'
+
 while true; do
     # Build process list for menu: "PID" "COMMAND"
     menu_items=()

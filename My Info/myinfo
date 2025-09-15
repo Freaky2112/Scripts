@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Color codes
+BLUE="\e[38;5;33m"
+YELLOW="\e[33m"
+PURPLE="\e[38;5;129m"
+MAGENTA="\e[35m"
+RESET="\e[0m"
+
+# User info
+echo -e "${BLUE}User:${RESET} $(whoami)"
+
+# Date
+echo -e "${YELLOW}Date:${RESET} $(date)"
+
+# System uptime
+echo -e "${BLUE}Uptime:${RESET} $(uptime -p)"
+
+# Disk usage of root
+echo -e "${BLUE}Disk Usage:${RESET} $(df -h / | tail -1 | awk '{print $5}')"
+
+# Local IPs with interface names
+echo -e "${BLUE}Local IP(s):${RESET}"
+# Loop through all network interfaces (except loopback)
+for iface in $(ip -o addr show scope global | awk '{print $2}'); do
+    ip_addr=$(ip -o -4 addr show "$iface" | awk '{print $4}')
+    echo -e "  ${PURPLE}$iface:${RESET} $ip_addr"
+done
