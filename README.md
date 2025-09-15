@@ -1,7 +1,7 @@
 # Some Little Scripts
 
 ## Table of Contents
-- [Check Disk Space](#Diskspace)
+- [Check Disk Space](/Diskspace/dskspc)
 - [Monero](#Monero)
 - [Check Info of Machine](#My_Info)
 - [Process Killer](#Process_kill)
