@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Public IP Checker with whiptail
 
+# Set Color for Background in Whiptail
+export NEWT_COLORS='
+    root=,blue
+'
+
 # Show a menu with whiptail
 choice=$(whiptail --title "Public IP Checker" \
     --menu "Select IP type to check:" 15 50 3 \
