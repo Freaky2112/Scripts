@@ -2,7 +2,7 @@
 
 ## Table of Contents
 - [Check Disk Space](/Diskspace)
-- [Check Info of Machine](/My_Info)
+- [Check Info of Machine](/My_info)
 - [Process Killer](/Process_kill)
 - [Public IP Finder](/Public_IP)
 - [Password Generator](/Pwd_generator)
