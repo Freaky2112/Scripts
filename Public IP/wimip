@@ -22,8 +22,10 @@ fi
 # Functions to get IPs
 get_ipv4() {
     ipv4=$(curl -4 -s https://ifconfig.me)
+    forwarded=$(curl -s https://ifconfig.me/forwarded)
     if [ -n "$ipv4" ]; then
         echo "IPv4: $ipv4"
+        echo "Forwarded For: $forwarded"
     else
         echo "IPv4: Not available"
     fi
