@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Random Password Generator with multiple outputs
+
+echo -e "\e[038;5;214m😈 Random Password Generator Just it Enter to use Default Value 👿"
+echo -e "\033[037m"
+
+# Ask for length
+read -p "Enter password length [32]: " length
+length=${length:-32}  # Default to 32 if empty
+
+# Ask how many to generate
+read -p "How many passwords do you want? [5]: " count
+count=${count:-5}  # Default to 5 if empty
+
+# Ask what to include (default yes)
+read -p "Include letters? (Y/n): " use_letters
+use_letters=${use_letters:-y}
+
+read -p "Include numbers? (Y/n): " use_numbers
+use_numbers=${use_numbers:-y}
+
+read -p "Include special characters? (Y/n): " use_special
+use_special=${use_special:-y}
+
+# Build character set
+charset=""
+[[ "$use_letters" =~ ^[Yy]$ ]] && charset+="A-Za-z"
+[[ "$use_numbers" =~ ^[Yy]$ ]] && charset+="0-9"
+[[ "$use_special" =~ ^[Yy]$ ]] && charset+="!@#$%^&*()-_=+{}[]<>?"
+
+# Validate
+if [ -z "$charset" ]; then
+    echo "Error: You must choose at least one character type!"
+    exit 1
+fi
+
+echo -e "\nGenerated passwords:\n"
+
+# Generate requested number of passwords
+for i in $(seq 1 "$count"); do
+    password=$(< /dev/urandom tr -dc "$charset" | head -c"$length")
+    echo "$i: $password"
+done
