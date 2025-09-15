@@ -10,7 +10,7 @@
 - [Random MSG for sudo](/Sudo_prompt)
 - [Cleanup Temporary files](/Temp_cleanup)
 - [Monero](/Monero)
-- 
+  
 ## Installation
 Just download the files and copy it in your bin folder and make it executable with chmod +x
 and add your bin folder to $PATH with this command
