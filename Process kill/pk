@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Process Killer Menu with whiptail
+
+while true; do
+    # Build process list for menu: "PID" "COMMAND"
+    menu_items=()
+    while read -r pid cmd; do
+        menu_items+=("$pid" "$cmd")
+    done < <(ps -e -o pid= -o comm= --sort=-%mem | head -n 15)
+
+    # Show menu
+    choice=$(whiptail --title "Process Killer" \
+        --menu "Select a process to kill (ESC to quit)" 20 60 10 \
+        "${menu_items[@]}" \
+        3>&1 1>&2 2>&3)
+
+    exit_status=$?
+    if [ $exit_status -ne 0 ]; then
+        echo "Exiting..."
+        break
+    fi
+
+    # Confirm before killing
+    if whiptail --yesno "Kill process PID: $choice ?" 8 40; then
+        kill -9 "$choice" && whiptail --msgbox "Process $choice killed." 8 40
+    fi
+done
