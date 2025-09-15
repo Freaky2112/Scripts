@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# create_sshkey_whiptail.sh
+# Generate an SSH key with chosen encryption method using whiptail dialogs.
+
+KEY_DIR="$HOME/.ssh"
+mkdir -p "$KEY_DIR"
+chmod 700 "$KEY_DIR"
+
+# --- Select Key Type ---
+KEY_TYPE=$(whiptail --title "🔑 SSH Key Generator" --menu "Choose key type:" 15 50 4 \
+"ed25519" "Recommended (fast + secure)" \
+"rsa" "Legacy (4096 bits)" \
+"ecdsa" "Elliptic Curve (521 bits)" 3>&1 1>&2 2>&3)
+
+# Cancel pressed?
+[ $? -ne 0 ] && exit 1
+
+# Default filenames & options
+case $KEY_TYPE in
+    ed25519)
+        DEFAULT_KEY_NAME="id_ed25519_custom"
+        EXTRA_OPTS="-a 100"
+        ;;
+    rsa)
+        DEFAULT_KEY_NAME="id_rsa_custom"
+        EXTRA_OPTS="-b 4096"
+        ;;
+    ecdsa)
+        DEFAULT_KEY_NAME="id_ecdsa_custom"
+        EXTRA_OPTS="-b 521"
+        ;;
+esac
+
+# --- Ask for key name ---
+KEY_NAME=$(whiptail --inputbox "Enter key name:" 10 50 "$DEFAULT_KEY_NAME" 3>&1 1>&2 2>&3)
+[ $? -ne 0 ] && exit 1
+KEY_PATH="$KEY_DIR/$KEY_NAME"
+
+# --- Ask for email ---
+EMAIL=$(whiptail --inputbox "Enter your email (for key comment):" 10 50 "$(whoami)@$(hostname)" 3>&1 1>&2 2>&3)
+[ $? -ne 0 ] && exit 1
+
+# --- Generate Key ---
+if [ -f "$KEY_PATH" ]; then
+    whiptail --msgbox "⚠️ Key already exists at $KEY_PATH" 10 50
+else
+    ssh-keygen -t "$KEY_TYPE" $EXTRA_OPTS -C "$EMAIL" -f "$KEY_PATH"
+    if [ $? -eq 0 ]; then
+        whiptail --msgbox "✅ $KEY_TYPE key generated at $KEY_PATH" 10 50
+    else
+        whiptail --msgbox "❌ Failed to generate SSH key!" 10 50
+        exit 1
+    fi
+fi
+
+# --- Copy Key Option ---
+if (whiptail --yesno "Do you want to copy the key to a server?" 10 50); then
+    REMOTE=$(whiptail --inputbox "Enter username@hostname:" 10 50 3>&1 1>&2 2>&3)
+    [ $? -ne 0 ] && exit 1
+
+    # Run ssh-copy-id and capture errors
+    if ssh-copy-id -i "$KEY_PATH.pub" "$REMOTE" 2>/tmp/sshcopy_error.log; then
+        whiptail --msgbox "✅ Key successfully copied to $REMOTE" 10 50
+        
+        # --- Test passwordless login ---
+        if ssh -o BatchMode=yes -o ConnectTimeout=5 "$REMOTE" "echo 'Connected successfully'" 2>/tmp/sshlogin_error.log; then
+            whiptail --msgbox "🎉 Passwordless login works for $REMOTE" 10 60
+        else
+            ERROR_MSG=$(< /tmp/sshlogin_error.log)
+            whiptail --msgbox "⚠️ Key copied, but login test failed.\n\nError:\n$ERROR_MSG" 15 70
+        fi
+
+    else
+        ERROR_MSG=$(< /tmp/sshcopy_error.log)
+        whiptail --msgbox "❌ Failed to copy key to $REMOTE\n\nError:\n$ERROR_MSG" 15 70
+    fi
+fi
+
+whiptail --msgbox "✨ All done!" 10 40

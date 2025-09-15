@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# System Cleanup Script with sizes
+
+# Get sizes
+SIZE_TMP=$(du -sh /tmp 2>/dev/null | awk '{print $1}')
+SIZE_CACHE=$(du -sh ~/.cache 2>/dev/null | awk '{print $1}')
+#SIZE_LOGS=$(sudo du -sh /var/log 2>/dev/null | awk '{print $1}')
+SIZE_THUMB=$(du -sh ~/.thumbnails 2>/dev/null | awk '{print $1}')
+
+# Define cleanup actions
+cleanup_tmp() {
+    rm -rf /tmp/* 2>/dev/null
+}
+cleanup_cache() {
+    rm -rf ~/.cache/* 2>/dev/null
+}
+cleanup_logs() {
+    sudo find /var/log -type f -name "*.log" -delete 2>/dev/null
+}
+cleanup_thumbnails() {
+    rm -rf ~/.thumbnails/* 2>/dev/null
+}
+log_size(){
+    SIZE_LOGS=$(sudo du -sh /var/log 2>/dev/null | awk '{print $1}')
+}
+
+while true; do
+    CHOICE=$(whiptail --title "System Cleanup" --checklist \
+    "Select cleanup tasks (SPACE to select, ENTER to confirm):" 20 75 10 \
+    "1" "Clear /tmp folder [Size: $SIZE_TMP]" OFF \
+    "2" "Clear user cache (~/.cache) [Size: $SIZE_CACHE]" OFF \
+    "3" "Clear system logs (/var/log) [Size: $SIZE_LOGS]" OFF \
+    "4" "Clear thumbnail cache (~/.thumbnails) [Size: $SIZE_THUMB]" OFF \
+    "5" "Calculated Logs Sieze Need Sudo" OFF \
+    "Q" "Quit" OFF \
+    3>&1 1>&2 2>&3)
+
+    exit_status=$?
+    if [ $exit_status -ne 0 ] || [[ $CHOICE == *"Q"* ]]; then
+        whiptail --msgbox "Exiting cleanup tool." 8 40
+        break
+    fi
+
+    # Run selected tasks
+    [[ $CHOICE == *"1"* ]] && cleanup_tmp
+    [[ $CHOICE == *"2"* ]] && cleanup_cache
+    [[ $CHOICE == *"3"* ]] && cleanup_logs
+    [[ $CHOICE == *"4"* ]] && cleanup_thumbnails
+    [[ $CHOICE == *"5"* ]] && log_size
+
+    # Recalculate sizes after cleanup
+    SIZE_TMP=$(du -sh /tmp 2>/dev/null | awk '{print $1}')
+    SIZE_CACHE=$(du -sh ~/.cache 2>/dev/null | awk '{print $1}')
+#    SIZE_LOGS=$(sudo du -sh /var/log 2>/dev/null | awk '{print $1}')
+    SIZE_THUMB=$(du -sh ~/.thumbnails 2>/dev/null | awk '{print $1}')
+
+    whiptail --msgbox "Cleanup complete! Sizes updated." 8 40
+done
