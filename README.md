@@ -12,13 +12,14 @@
 - [Monero](/Monero)
   
 ## Installation
-Just download the files and copy it in your bin folder and make it executable with chmod +x
-and add your bin folder to $PATH with this command
-edit your .bashrc and add this line:
+Just download the files and copy it in your bin folder <br>
+make it executable with chmod +x <br>
+and add your bin folder to $PATH <br>
+edit your .bashrc and add this line:<br>
 export PATH="$PATH:$HOME/bin"
 
 ## Usage
-make alias for the script or just call it with it's full name
+Make alias for the script or just call it with it's full name
 
 ## License
 [MIT](LICENSE)
