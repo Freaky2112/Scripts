@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Public IP Checker with whiptail
+
+# Show a menu with whiptail
+choice=$(whiptail --title "Public IP Checker" \
+    --menu "Select IP type to check:" 15 50 3 \
+    1 "IPv4" \
+    2 "IPv6" \
+    3 "Both" 3>&1 1>&2 2>&3)
+
+exitstatus=$?
+if [ $exitstatus != 0 ]; then
+    echo "Cancelled."
+    exit 1
+fi
+
+# Functions to get IPs
+get_ipv4() {
+    ipv4=$(curl -4 -s https://ifconfig.me)
+    if [ -n "$ipv4" ]; then
+        echo "IPv4: $ipv4"
+    else
+        echo "IPv4: Not available"
+    fi
+}
+
+get_ipv6() {
+    ipv6=$(curl -6 -s https://ifconfig.me)
+    if [ -n "$ipv6" ]; then
+        echo "IPv6: $ipv6"
+    else
+        echo "IPv6: Not available"
+    fi
+}
+
+# Show results in a whiptail message box
+output=""
+case "$choice" in
+    1) output=$(get_ipv4) ;;
+    2) output=$(get_ipv6) ;;
+    3) output="$(get_ipv4)\n$(get_ipv6)" ;;
+esac
+
+whiptail --title "Your Public IP" --msgbox "$output" 10 50
