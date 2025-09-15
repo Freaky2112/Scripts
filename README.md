@@ -10,6 +10,8 @@
 - [Menu for SSH](/SSHkey)
 - [Random MSG for sudo](/Sudo_prompt)
 - [Cleanup Temporary files](/Temp_cleanup)
+- [![OpenAI Logo](https://upload.wikimedia.org/wikipedia/commons/4/4e/OpenAI_Logo.svg)](https://openai.com)
+
 
 ## Installation
 Just download the files and copy it in your bin folder and make it executable with chmod +x
