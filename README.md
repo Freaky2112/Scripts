@@ -20,4 +20,5 @@ export PATH="$PATH:$HOME/bin"
 ## Usage
 make alias for the script or just call it with it's full name
 
-## Lisence
+## License
+[MIT](LICENSE)
