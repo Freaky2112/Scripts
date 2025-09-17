@@ -61,7 +61,7 @@ Give context: is it a tool, library, web app, etc.?
 
 ---
 
-## License
+## 📜 License
 [MIT](LICENSE)
 
 <br>
