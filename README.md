@@ -64,3 +64,10 @@ Give context: is it a tool, library, web app, etc.?
 
 ## License
 [MIT](LICENSE)
+
+<br>
+<br>
+<br>
+
+![](https://img.shields.io/badge/Freaky2112-brightgreen)
+
