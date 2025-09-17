@@ -2,7 +2,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
 ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
-
+![Stars](https://img.shields.io/github/stars/Freaky2112/Scripts)
 
 ---
 
@@ -20,11 +20,8 @@
 ---
 
 ## ⚙️ Installation
-Just download the files and copy it in your bin folder <br>
-make it executable with chmod +x <br>
-and add your bin folder to $PATH <br>
-edit your .bashrc and add this line:<br>
-export PATH="$PATH:$HOME/bin"
+Just download the Repo and run the installer <br>
+He bring you a menu to choose witch scripts to install <br>
 
 ### Install
 ```bash
@@ -50,8 +47,8 @@ chmod +x install
   
 ---
 
-## Usage
-Make alias for the script or just call it with it's full name
+## 📦 Usage
+Just call it with it's full name  Or make alias for the script  
 
 ---
 
