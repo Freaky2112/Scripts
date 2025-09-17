@@ -2,7 +2,8 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
 ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
-![test](https://img.shields.io/github/license/Freaky2112/test_repo)
+![test](https://img.shields.io/github/license/Freaky2112/Scripts)
+
 
 ---
 
@@ -30,6 +31,8 @@ export PATH="$PATH:$HOME/bin"
 ```bash
 git clone https://github.com/Freaky2112/Scripts.git
 cd Scrpits
+chmod +x install
+./install
 ```
 
 
