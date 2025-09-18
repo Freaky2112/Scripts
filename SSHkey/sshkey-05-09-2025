@@ -190,27 +190,27 @@ delete_host_config() {
 # --- Main Menu Loop ---
 while true; do
     CHOICE=$(whiptail --title "🔑 SSH Key Manager" --menu "Choose an option:" 20 60 12 \
-    "1" "Generate new SSH key" \
-    "2" "Copy key to server & update config" \
-    "3" "Test passwordless login" \
-    "4" "List existing keys" \
-    "5" "Delete a key" \
-    "6" "Delete host from config" \
-    "7" "Show server history with status" \
-    "8" "Connect to server using SSH config"\
+    "1" "Connect to server using SSH config"\
+    "2" "Generate new SSH key" \
+    "3" "Copy key to server & update config" \
+    "4" "Test passwordless login" \
+    "5" "List existing keys" \
+    "6" "Delete a key" \
+    "7" "Delete host from config" \
+    "8" "Show server history with status" \
     "9" "Exit" 3>&1 1>&2 2>&3)
 
     [ $? -ne 0 ] && exit 0
 
     case $CHOICE in
-        1) generate_key ;;
-        2) copy_key ;;
-        3) test_login ;;
-        4) list_keys ;;
-        5) delete_key ;;
-        6) delete_host_config ;;
-        7) list_history ;;
-        8) connect_server ;;
+        1) connect_server ;;
+        2) generate_key ;;
+        3) copy_key ;;
+        4) test_login ;;
+        5) list_keys ;;
+        6) delete_key ;;
+        7) delete_host_config ;;
+        8) list_history ;;
         9) exit 0 ;;
     esac
 done

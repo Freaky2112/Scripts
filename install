@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+# bin-installer.sh
+# Simple installer to copy selected scripts into ~/.bin, make them executable,
+# and optionally add ~/.bin to your PATH (in .bashrc/.profile/.zshrc).
+# Place this installer in the same directory as the scripts you want to install.
+
+set -euo pipefail
+IFS=$'\n\t'
+
+BIN_DIR="$HOME/.bin"
+SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.profile" "$HOME/.zshrc")
+
+usage() {
+  cat <<EOF
+Usage: $0 [options]
+
+Options:
+  -a, --all          Install all executable-looking files in current directory and subfolders (except installer)
+  -i, --interactive  Launch an interactive menu (default)
+  -u, --uninstall    Uninstall selected scripts from $BIN_DIR
+  -h, --help         Show this help
+
+Examples:
+  $0 --interactive   # interactive menu to pick files to install
+  $0 --all           # install all files found in current dir and subfolders
+  $0 --uninstall     # interactive uninstall from ~/.bin
+
+All installed files will be copied into: $BIN_DIR
+EOF
+}
+
+# Ensure BIN_DIR exists
+prepare_bin_dir() {
+  if [[ ! -d "$BIN_DIR" ]]; then
+    mkdir -p "$BIN_DIR"
+    echo "Created $BIN_DIR"
+  fi
+}
+
+# Add BIN_DIR to PATH in user's rc files if not present
+ensure_path() {
+  if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    echo "\n# Added by bin-installer: ensure ~/.bin is in PATH" >> "$HOME/.profile"
+    echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$HOME/.profile"
+    echo "Note: $BIN_DIR added to PATH in ~/.profile. Log out/in or source it to apply."
+  fi
+
+  for rc in "${SHELL_RC_FILES[@]}"; do
+    if [[ -f "$rc" ]]; then
+      if ! grep -q "export PATH=.*\\$HOME/.bin" "$rc" 2>/dev/null; then
+        printf "\n# Added by bin-installer: ensure ~/.bin is in PATH\nexport PATH=\"$BIN_DIR:\$PATH\"\n" >> "$rc"
+        echo "Appended PATH export to $rc"
+      fi
+    fi
+  done
+}
+
+list_candidates() {
+  find . -type f \
+    \( -name "*.sh" -o -perm -111 -o -exec grep -Iq "^#!" {} \; -print \) \
+    -printf "%P\n" 2>/dev/null | \
+    sed '/^\./d' | \
+    grep -vE '(^|/)install(\.sh)?$' | \
+    grep -vE '(^|/)bin-installer\.sh$' | \
+    sort -u
+}
+
+prompt_overwrite() {
+  local target="$1"
+  if [[ -e "$target" ]]; then
+    while true; do
+      read -rp "$target exists — overwrite? [y]es/[n]o/[s]kip-all: " yn
+      case "$yn" in
+        [Yy]*) return 0 ;;
+        [Nn]*) return 1 ;;
+        [Ss]*) echo SKIP_ALL; return 2 ;;
+        *) echo "Please answer y, n, or s." ;;
+      esac
+    done
+  fi
+  return 0
+}
+
+install_file() {
+  local src="$1"
+  local dest="$BIN_DIR/$(basename "$src")"
+
+  if [[ "$SKIP_ALL_OVERWRITE" == "true" ]]; then
+    echo "Skipping $src (skip-all in effect)"
+    return
+  fi
+
+  if [[ -e "$dest" ]]; then
+    prompt_overwrite "$dest"
+    case $? in
+      0) ;;
+      1) echo "Skipping $src"; return ;;
+      2) SKIP_ALL_OVERWRITE=true; echo "Skipping $src (skip-all set)"; return ;;
+    esac
+  fi
+
+  cp -p "$src" "$dest"
+  chmod +x "$dest"
+  echo "Installed: $dest"
+}
+
+uninstall_menu() {
+  if [[ ! -d "$BIN_DIR" ]]; then
+    echo "$BIN_DIR does not exist. Nothing to uninstall."
+    exit 0
+  fi
+  mapfile -t files < <(ls -1A "$BIN_DIR" 2>/dev/null || true)
+  if [[ ${#files[@]} -eq 0 ]]; then
+    echo "No files found in $BIN_DIR"
+    exit 0
+  fi
+  echo "Select files to uninstall (space-separated numbers), or 'all' to remove all:"
+  for i in "${!files[@]}"; do
+    printf "%3d) %s\n" $((i+1)) "${files[$i]}"
+  done
+  read -rp "Selection: " sel
+  if [[ "$sel" == "all" ]]; then
+    for f in "${files[@]}"; do
+      rm -f "$BIN_DIR/$f" && echo "Removed $BIN_DIR/$f"
+    done
+    exit 0
+  fi
+  for token in $sel; do
+    if [[ $token =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#files[@]} )); then
+      f=${files[$((token-1))]}
+      rm -f "$BIN_DIR/$f" && echo "Removed $BIN_DIR/$f"
+    else
+      echo "Skipping invalid selection: $token"
+    fi
+  done
+}
+
+interactive_install() {
+  mapfile -t candidates < <(list_candidates)
+  if [[ ${#candidates[@]} -eq 0 ]]; then
+    echo "No candidate scripts found in the current directory or subfolders."
+    exit 1
+  fi
+
+  echo "Found the following candidate scripts under $(pwd):"
+  for i in "${!candidates[@]}"; do
+    printf "%3d) %s\n" $((i+1)) "${candidates[$i]}"
+  done
+
+  echo "Enter numbers separated by spaces to install, 'all' to install all, or 'q' to quit."
+  read -rp "Selection: " selection
+  if [[ "$selection" == "q" ]]; then
+    echo "Aborted."
+    exit 0
+  fi
+  if [[ "$selection" == "all" ]]; then
+    for f in "${candidates[@]}"; do
+      install_file "$f"
+    done
+    return
+  fi
+
+  for token in $selection; do
+    if [[ $token =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#candidates[@]} )); then
+      f=${candidates[$((token-1))]}
+      install_file "$f"
+    else
+      echo "Skipping invalid selection: $token"
+    fi
+  done
+}
+
+install_all() {
+  mapfile -t candidates < <(list_candidates)
+  if [[ ${#candidates[@]} -eq 0 ]]; then
+    echo "No candidate scripts found in the current directory or subfolders."
+    exit 1
+  fi
+  for f in "${candidates[@]}"; do
+    install_file "$f"
+  done
+}
+
+# --- main ---
+if [[ ${#@} -eq 0 ]]; then
+  MODE="interactive"
+else
+  MODE=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -a|--all) MODE="all"; shift ;;
+      -i|--interactive) MODE="interactive"; shift ;;
+      -u|--uninstall) MODE="uninstall"; shift ;;
+      -h|--help) usage; exit 0 ;;
+      *) echo "Unknown arg: $1"; usage; exit 1 ;;
+    esac
+  done
+fi
+
+SKIP_ALL_OVERWRITE=false
+prepare_bin_dir
+case "$MODE" in
+  interactive)
+    interactive_install
+    ensure_path
+    ;;
+  all)
+    install_all
+    ensure_path
+    ;;
+  uninstall)
+    uninstall_menu
+    ;;
+  *)
+    echo "Unknown mode: $MODE"; usage; exit 1
+    ;;
+esac
+
+echo "Done. All selected scripts have been copied into: $BIN_DIR"
+echo "If you added PATH exports, open a new shell or source the rc file: e.g. source ~/.profile"
