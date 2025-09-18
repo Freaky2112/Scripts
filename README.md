@@ -52,6 +52,39 @@ Just call it with it's full name  Or make alias for the script
 
 ---
 
+## 📂 Project Structure
+```
+$USER/home/
+├── Scripts/
+│
+│ ├── Diskspace/ # Check Space Available
+│ │
+│ ├── Monero/ # Uninstall Ocean-Monero Script
+│ │
+│ ├── My_info/ # Display Hostname, Username, Local IP, ...
+│ │
+│ ├── Process_kill/ # Little Process Killer Show the 10 most mem and cpu Usage
+│ │
+│ ├── Public_IP/ # Display  Wan IP
+│ │
+│ ├── Pwd_generator/ # Little Password Generator
+│ │
+│ ├── SSHkey/ # Menu for All ssh stuff
+│ │
+│ ├── Sudo_prompt/ # Change to Sudo Prompt when ask for password
+│ │
+│ └── Temp_cleanup/ # Delete Temp files /.cache /.thumbnails /tmp /var/log 
+│
+│
+├── install
+│
+├── LICENSE
+│
+└── README.md
+
+```
+---
+
 ## 📖 About
 Explain what the project does, its purpose, and why it exists.  
 Give context: is it a tool, library, web app, etc.?
