@@ -145,7 +145,8 @@ kill_session() {
             fi
             ;;
         [Aa])
-            read -rp "⚠️  ${RED}Kill ALL tmux sessions?${RESET} (y/n): " confirm_all
+            echo -en "⚠️  ${RED}Kill ALL tmux sessions?${RESET} (y/n): "
+            read confirm_all
             if [[ "$confirm_all" =~ ^[Yy]$ ]]; then
                 if [[ -n "$TMUX" ]]; then
                     echo -e "${YELLOW}⚠️  You’re inside tmux. Exit tmux first to kill all sessions.${RESET}"
