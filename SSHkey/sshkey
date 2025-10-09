@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# create_sshkey_whiptail.sh
-# Generate an SSH key with chosen encryption method using whiptail dialogs.
+
+#
+# SSH Menu  (Whiptail Edition)
+# Author: Freaky
+# Description:
+#   Interactive menu to SSH, create key, delete key, and manage config file.
 
 KEY_DIR="$HOME/.ssh"
 mkdir -p "$KEY_DIR"
