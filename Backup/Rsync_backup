@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# Rsync Backup Script....
+
+
+# Set Variables for Source and Destination
+echo "Witch Machine you want to backup"
+read -r SRC
+
+echo "Witch folder you want to backup ?"
+read -r FOLDER
+
+echo "On witch Machine you want to save your backup"
+read -r DEST
+
+echo "And on witch Folder you want to save your backup"
+read -r PATHDEST
+
+# Usage: ./backup /source/path /destination/path
+# Example: ./backup /home/user/ /mnt/backup/path
+
+# rsync options:
+# -a : archive mode (preserves permissions, symlinks, times, etc.)
+# -v : verbose
+# -h : human-readable numbers
+# -z : compress file data during transfer
+# -P : progress + partial transfer
+# --delete : delete files on DEST that don’t exist in SRC
+# --exclude : skip files or directories
+
+#
+
+# Add exclusions 
+EXCLUDES=(
+    "--exclude=.cache"
+    "--exclude=*.tmp"
+)
+
+# Rsync options
+RSYNC_OPTS="-avhzP "
+
+#Script...
+rsync $RSYNC_OPTS "${EXCLUDES[@]}" "${SRC}${FOLDER}" "${DEST}${PATHDEST}"
+
+#Exit code ... Check for error
+if [ $? -eq 0 ]; then
+    echo "✅ Backup completed successfully."
+else
+    echo "❌ Rsync encountered an error."
+    exit 1
+fi
