@@ -7,77 +7,214 @@
 #   Interactive menu to SSH, create key, delete key, and manage config file.
 
 KEY_DIR="$HOME/.ssh"
+HISTORY_FILE="$HOME/.ssh_manager_history"
+CONFIG_FILE="$KEY_DIR/config"
+
 mkdir -p "$KEY_DIR"
-chmod 700 "$KEY_DIR"
+touch "$HISTORY_FILE" "$CONFIG_FILE"
+chmod 600 "$HISTORY_FILE" "$CONFIG_FILE"
 
-# --- Select Key Type ---
-KEY_TYPE=$(whiptail --title "🔑 SSH Key Generator" --menu "Choose key type:" 15 50 4 \
-"ed25519" "Recommended (fast + secure)" \
-"rsa" "Legacy (4096 bits)" \
-"ecdsa" "Elliptic Curve (521 bits)" 3>&1 1>&2 2>&3)
+# --- Helper Functions ---
 
-# Cancel pressed?
-[ $? -ne 0 ] && exit 1
+save_history() {
+    local key="$1"
+    local server="$2"
+    local result="$3"
+    grep -v "^$key|$server|" "$HISTORY_FILE" > "$HISTORY_FILE.tmp" 2>/dev/null
+    mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
+    echo "$key|$server|$result|$(date '+%Y-%m-%d %H:%M:%S')" >> "$HISTORY_FILE"
+}
 
-# Default filenames & options
-case $KEY_TYPE in
-    ed25519)
-        DEFAULT_KEY_NAME="id_ed25519_custom"
-        EXTRA_OPTS="-a 100"
-        ;;
-    rsa)
-        DEFAULT_KEY_NAME="id_rsa_custom"
-        EXTRA_OPTS="-b 4096"
-        ;;
-    ecdsa)
-        DEFAULT_KEY_NAME="id_ecdsa_custom"
-        EXTRA_OPTS="-b 521"
-        ;;
-esac
+list_history() {
+    MENU_ITEMS=()
+    while read -r line; do
+        key=$(echo "$line" | cut -d'|' -f1)
+        server=$(echo "$line" | cut -d'|' -f2)
+        result=$(echo "$line" | cut -d'|' -f3)
+        last=$(echo "$line" | cut -d'|' -f4)
+        ICON="❌"
+        [ "$result" = "success" ] && ICON="✅"
+        MENU_ITEMS+=("$key@$server" "$ICON Last login: $last")
+    done < "$HISTORY_FILE"
 
-# --- Ask for key name ---
-KEY_NAME=$(whiptail --inputbox "Enter key name:" 10 50 "$DEFAULT_KEY_NAME" 3>&1 1>&2 2>&3)
-[ $? -ne 0 ] && exit 1
-KEY_PATH="$KEY_DIR/$KEY_NAME"
+    [ ${#MENU_ITEMS[@]} -eq 0 ] && { whiptail --msgbox "No server history yet!" 10 50; return; }
 
-# --- Ask for email ---
-EMAIL=$(whiptail --inputbox "Enter your email (for key comment):" 10 50 "$(whoami)@$(hostname)" 3>&1 1>&2 2>&3)
-[ $? -ne 0 ] && exit 1
+    whiptail --title "📜 Server History" --msgbox "$(printf "%-30s %s\n" "${MENU_ITEMS[@]}")" 20 70
+}
 
-# --- Generate Key ---
-if [ -f "$KEY_PATH" ]; then
-    whiptail --msgbox "⚠️ Key already exists at $KEY_PATH" 10 50
-else
-    ssh-keygen -t "$KEY_TYPE" $EXTRA_OPTS -C "$EMAIL" -f "$KEY_PATH"
-    if [ $? -eq 0 ]; then
-        whiptail --msgbox "✅ $KEY_TYPE key generated at $KEY_PATH" 10 50
+# --- Core Functions ---
+
+generate_key() {
+    KEY_TYPE=$(whiptail --title "🔑 Generate SSH Key" --menu "Choose key type:" 15 50 4 \
+        "ed25519" "Recommended (fast + secure)" \
+        "rsa" "Legacy (4096 bits)" \
+        "ecdsa" "Elliptic Curve (521 bits)" 3>&1 1>&2 2>&3) || return
+
+    case $KEY_TYPE in
+        ed25519) DEFAULT_KEY_NAME="id_ed25519_custom"; EXTRA_OPTS="-a 100" ;;
+        rsa)     DEFAULT_KEY_NAME="id_rsa_custom";    EXTRA_OPTS="-b 4096" ;;
+        ecdsa)   DEFAULT_KEY_NAME="id_ecdsa_custom";  EXTRA_OPTS="-b 521" ;;
+    esac
+
+    KEY_NAME=$(whiptail --inputbox "Enter key name:" 10 50 "$DEFAULT_KEY_NAME" 3>&1 1>&2 2>&3) || return
+    EMAIL=$(whiptail --inputbox "Enter your email (for key comment):" 10 50 "$(whoami)@$(hostname)" 3>&1 1>&2 2>&3) || return
+    KEY_PATH="$KEY_DIR/$KEY_NAME"
+
+    if [ -f "$KEY_PATH" ]; then
+        whiptail --msgbox "⚠️ Key already exists at $KEY_PATH" 10 50
     else
-        whiptail --msgbox "❌ Failed to generate SSH key!" 10 50
-        exit 1
+        ssh-keygen -t "$KEY_TYPE" $EXTRA_OPTS -C "$EMAIL" -f "$KEY_PATH"
+        if [ $? -eq 0 ]; then
+            whiptail --msgbox "✅ $KEY_TYPE key generated at $KEY_PATH" 10 50
+        else
+            whiptail --msgbox "❌ Failed to generate SSH key!" 10 50
+        fi
     fi
-fi
+}
 
-# --- Copy Key Option ---
-if (whiptail --yesno "Do you want to copy the key to a server?" 10 50); then
-    REMOTE=$(whiptail --inputbox "Enter username@hostname:" 10 50 3>&1 1>&2 2>&3)
-    [ $? -ne 0 ] && exit 1
+update_ssh_config() {
+    local key="$1"
+    local user="$2"
+    local host="$3"
 
-    # Run ssh-copy-id and capture errors
-    if ssh-copy-id -i "$KEY_PATH.pub" "$REMOTE" 2>/tmp/sshcopy_error.log; then
-        whiptail --msgbox "✅ Key successfully copied to $REMOTE" 10 50
-        
-        # --- Test passwordless login ---
-        if ssh -o BatchMode=yes -o ConnectTimeout=5 "$REMOTE" "echo 'Connected successfully'" 2>/tmp/sshlogin_error.log; then
+    # Remove old entry for host
+    awk -v h="$host" 'BEGIN{skip=0} /^Host /{skip=($2==h)?1:0} !skip{print}' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+
+    # Add new entry
+    {
+        echo ""
+        echo "Host $key"
+        echo "    HostName $host"
+        echo "    User $user"
+        echo "    IdentityFile $KEY_DIR/$key"
+    } >> "$CONFIG_FILE"
+
+    whiptail --msgbox "📝 SSH config updated for $user@$host" 10 60
+}
+
+copy_key() {
+    KEY_FILE=$(whiptail --inputbox "Enter key filename inside ~/.ssh (e.g., id_ed25519_custom)" 10 60 "" 3>&1 1>&2 2>&3) || return
+    REMOTE=$(whiptail --inputbox "Enter username@hostname:" 10 50 3>&1 1>&2 2>&3) || return
+
+    USERNAME=$(echo "$REMOTE" | cut -d'@' -f1)
+    HOSTNAME=$(echo "$REMOTE" | cut -d'@' -f2)
+
+    if ssh-copy-id -i "$KEY_DIR/$KEY_FILE.pub" "$REMOTE" 2>/tmp/sshcopy_error.log; then
+        whiptail --msgbox "✅ Key successfully copied to $REMOTE" 10 60
+
+        # Update SSH config
+        update_ssh_config "$KEY_FILE" "$USERNAME" "$HOSTNAME"
+
+        # Test login
+        if ssh -i "$KEY_DIR/$KEY_FILE" -o BatchMode=yes -o ConnectTimeout=5 "$REMOTE" "echo 'Connected successfully'" 2>/tmp/sshlogin_error.log; then
             whiptail --msgbox "🎉 Passwordless login works for $REMOTE" 10 60
+            save_history "$KEY_FILE" "$REMOTE" "success"
         else
             ERROR_MSG=$(< /tmp/sshlogin_error.log)
-            whiptail --msgbox "⚠️ Key copied, but login test failed.\n\nError:\n$ERROR_MSG" 15 70
+            whiptail --msgbox "⚠️ Login test failed for $REMOTE\n\n$ERROR_MSG" 15 70
+            save_history "$KEY_FILE" "$REMOTE" "fail"
         fi
-
     else
         ERROR_MSG=$(< /tmp/sshcopy_error.log)
-        whiptail --msgbox "❌ Failed to copy key to $REMOTE\n\nError:\n$ERROR_MSG" 15 70
+        whiptail --msgbox "❌ Failed to copy key\n\n$ERROR_MSG" 15 70
+        save_history "$KEY_FILE" "$REMOTE" "fail"
     fi
-fi
+}
 
-whiptail --msgbox "✨ All done!" 10 40
+test_login() {
+    REMOTE=$(whiptail --inputbox "Enter username@hostname to test login:" 10 50 3>&1 1>&2 2>&3) || return
+    KEY_FILE=$(whiptail --inputbox "Enter key filename to use:" 10 50 "" 3>&1 1>&2 2>&3) || return
+
+    if ssh -i "$KEY_DIR/$KEY_FILE" -o BatchMode=yes -o ConnectTimeout=5 "$REMOTE" "echo 'Connected successfully'" 2>/tmp/sshlogin_error.log; then
+        whiptail --msgbox "🎉 Passwordless login works for $REMOTE" 10 60
+        save_history "$KEY_FILE" "$REMOTE" "success"
+    else
+        ERROR_MSG=$(< /tmp/sshlogin_error.log)
+        whiptail --msgbox "⚠️ Login test failed for $REMOTE\n\n$ERROR_MSG" 15 70
+        save_history "$KEY_FILE" "$REMOTE" "fail"
+    fi
+}
+
+list_keys() {
+    KEYS=$(ls "$KEY_DIR" | grep -vE "(\.pub|known_hosts|known_hosts.old|config|authorized_keys|config.*|_sshmgr_hist)$" || echo "No keys found")
+    whiptail --msgbox "📂 Existing SSH Keys in ~/.ssh:\n\n$KEYS" 20 60
+}
+
+delete_key() {
+    KEYS=$(ls "$KEY_DIR" | grep -vE "(\.pub|known_hosts|known_hosts.old|config|authorized_keys)$")
+    [ -z "$KEYS" ] && { whiptail --msgbox "No keys to delete!" 10 40; return; }
+
+    KEY_FILE=$(whiptail --menu "Select key to delete:" 20 60 10 $(for k in $KEYS; do echo "$k" "$k"; done) 3>&1 1>&2 2>&3) || return
+
+    if (whiptail --yesno "Are you sure you want to delete $KEY_FILE and its .pub file?" 10 60); then
+        rm -f "$KEY_DIR/$KEY_FILE" "$KEY_DIR/$KEY_FILE.pub"
+        # Remove from history
+        grep -v "^$KEY_FILE|" "$HISTORY_FILE" > "$HISTORY_FILE.tmp" 2>/dev/null
+        mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
+        whiptail --msgbox "🗑️ $KEY_FILE deleted successfully" 10 50
+    fi
+}
+
+connect_server() {
+    HOSTS=$(awk '/^Host[[:space:]]+/ {print $2}' "$CONFIG_FILE" | grep -v '\*')
+    [ -z "$HOSTS" ] && { whiptail --msgbox "No hosts found in SSH config!" 10 50; return; }
+
+    MENU_ITEMS=()
+    for h in $HOSTS; do
+        MENU_ITEMS+=("$h" "")
+    done
+
+    SELECTED_HOST=$(whiptail --title "Connect to Server" --menu "Select a host to connect:" 20 60 10 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || return
+
+    if [ -n "$SELECTED_HOST" ]; then
+        whiptail --msgbox "Connecting to $SELECTED_HOST...\nUse Ctrl+D or 'exit' to return to menu" 10 60
+        ssh "$SELECTED_HOST"
+    fi
+}
+
+delete_host_config() {
+    HOSTS=$(awk '/^Host[[:space:]]+/ {print $2}' "$CONFIG_FILE" | grep -v '\*')
+    [ -z "$HOSTS" ] && { whiptail --msgbox "No hosts found in SSH config!" 10 50; return; }
+
+    HOST_TO_DELETE=$(whiptail --title "Delete SSH Config Host" --menu "Select a host to delete:" 20 60 10 $(for h in $HOSTS; do echo "$h" "$h"; done) 3>&1 1>&2 2>&3) || return
+
+    if (whiptail --yesno "Are you sure you want to delete host [$HOST_TO_DELETE] from SSH config?" 10 60); then
+        cp "$CONFIG_FILE" "$CONFIG_FILE.bak.$(date +%F_%T)" # backup
+        awk -v host="$HOST_TO_DELETE" '
+            BEGIN {skip=0}
+            $1=="Host" && $2==host {skip=1; next}
+            skip && $1=="Host" {skip=0}
+            !skip {print}
+        ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp"
+        mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+        whiptail --msgbox "🗑️ Host [$HOST_TO_DELETE] deleted from SSH config" 10 60
+    fi
+}
+
+# --- Main Menu Loop ---
+while true; do
+    CHOICE=$(whiptail --title "🔑 SSH Key Manager" --menu "Choose an option:" 20 60 12 \
+    "1" "Connect to Server" \
+    "2" "Generate new SSH key" \
+    "3" "Copy key to server & update config" \
+    "4" "Test passwordless login" \
+    "5" "List existing keys" \
+    "6" "Delete a key" \
+    "7" "Delete host from config" \
+    "8" "Show server history with status" \
+    "9" "Exit" 3>&1 1>&2 2>&3)
+
+    [ $? -ne 0 ] && exit 0
+
+    case $CHOICE in
+        1) connect_server;;
+        2) generate_key ;;
+        3) copy_key ;;
+        4) test_login ;;
+        5) list_keys ;;
+        6) delete_key ;;
+        7) delete_host_config ;;
+        8) list_history ;;
+        9) exit 0 ;;
+    esac
+done
