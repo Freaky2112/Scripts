@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+#
+# Author: Chat-GPT
+# Description:
 # Simple installer to copy selected scripts into ~/.bin, make them executable,
 # and optionally add ~/.bin to your PATH (in .bashrc/.profile/.zshrc).
 # Place this installer in the same directory as the scripts you want to install.
