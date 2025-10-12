@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# Author: Freaky
+# Description:
+# Simple Scripts to check if you UPS is online give you it's battery status and the input voltage via NUT.
+
+# Path to upsmon.conf
+UPSMON_CONF="/etc/nut/upsmon.conf"
+
+# Check if file exists
+if [ ! -f "$UPSMON_CONF" ]; then
+    echo "Error: $UPSMON_CONF not found."
+    exit 1
+fi
+
+# Extract UPS names from MONITOR lines
+UPS_LIST=$(grep -E "^\s*MONITOR" "$UPSMON_CONF" | awk '{print $2}')
+
+if [ -z "$UPS_LIST" ]; then
+    echo "No UPS devices found in $UPSMON_CONF."
+    exit 0
+fi
+
+echo "Checking UPS connectivity and status..."
+
+# Loop through each UPS
+for UPS in $UPS_LIST; do
+    echo "----------------------------------------"
+    echo "UPS: $UPS"
+
+    # Query UPS status
+    STATUS=$(upsc $UPS 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        echo "Error: Cannot connect to UPS '$UPS'. Check NUT configuration or UPS connection."
+        continue
+    fi
+
+    # Extract key info
+    UPS_STATUS=$(echo "$STATUS" | grep "ups.status" | awk '{print $2}')
+    BATTERY_CHARGE=$(echo "$STATUS" | grep "battery.charge" | awk '{print $2}')
+    INPUT_VOLTAGE=$(echo "$STATUS" | grep "input.voltage" | awk '{print $2}')
+
+    echo "Status: $UPS_STATUS"
+    echo "Battery: $BATTERY_CHARGE%"
+    echo "Input Voltage: $INPUT_VOLTAGE V"
+done
