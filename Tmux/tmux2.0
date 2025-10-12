@@ -3,7 +3,7 @@
 # TMUX Session Manager (Color Edition)
 # Author: Freaky
 # Description:
-#   Interactive colorful menu to attach, create, or kill tmux sessions.
+# Interactive colorful menu to attach, create, or kill tmux sessions.
 
 # ========================
 # Colors Variable
@@ -19,9 +19,9 @@ BLEUISH='\e[38;5;111m'
 GRAY='\e[38;5;247m'
 RESET='\033[0m'
 
-# ========================
+# =====================================
 # Function Tmux Active Session Checker 
-# ========================
+# =====================================
 list_sessions() {
     tmux list-sessions -F "#{session_name}" 2>/dev/null
 }
@@ -105,9 +105,9 @@ main_menu() {
     fi
 }
 
-# ========================
+# =============================
 # Function Create Tmux Session
-# ========================
+# =============================
 create_session() {
     echo
     read -rp "Enter a new session name: " session_name
@@ -139,9 +139,9 @@ kill_session() {
         main_menu
     fi
 
-  # ========================
+  # ===================================
   # Alternating colors for readability
-  # ========================
+  # ===================================
     for i in "${!sessions[@]}"; do
         color=$([[ $((i % 2)) -eq 0 ]] && echo "${ORANGE}" || echo "${YELLOW}")
         printf " ${color}[%d] %s\n" "$((i+1))" "${sessions[$i]}"
