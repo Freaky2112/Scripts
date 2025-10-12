@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
+#
 # System Cleanup Script with sizes
+# Author: Freaky
+# Description:
+# Check for temp/log files in : /tmp /var/log ~/.cache ~/.thumbnails
+# give you size of folders and option to delete it..
 
 # Get sizes
 SIZE_TMP=$(du -sh /tmp 2>/dev/null | awk '{print $1}')
