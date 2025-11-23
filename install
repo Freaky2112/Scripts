@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 #
-# Author: Chat-GPT
+# Author: Freaky
+# Contributor: ChatGPT , Claude
 # Description:
-# Simple installer to copy selected scripts into ~/.bin, make them executable,
-# and optionally add ~/.bin to your PATH (in .bashrc/.profile/.zshrc).
+# Simple installer to copy selected scripts into ~/.local/bin, make them executable,
+# and optionally add ~/.local/bin to your PATH (in .bashrc/.profile/.zshrc).
 # Place this installer in the same directory as the scripts you want to install.
 
 set -euo pipefail
 IFS=$'\n\t'
 
-BIN_DIR="$HOME/.bin"
+BIN_DIR="$HOME/.local/bin"
 SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.profile" "$HOME/.zshrc")
 
 usage() {
@@ -25,7 +26,7 @@ Options:
 Examples:
   $0 --interactive   # interactive menu to pick files to install
   $0 --all           # install all files found in current dir and subfolders
-  $0 --uninstall     # interactive uninstall from ~/.bin
+  $0 --uninstall     # interactive uninstall from ~/.local/bin
 
 All installed files will be copied into: $BIN_DIR
 EOF
@@ -42,15 +43,15 @@ prepare_bin_dir() {
 # Add BIN_DIR to PATH in user's rc files if not present
 ensure_path() {
   if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    echo "\n# Added by bin-installer: ensure ~/.bin is in PATH" >> "$HOME/.profile"
+    echo "\n# Added by bin-installer: ensure ~/.local/bin is in PATH" >> "$HOME/.profile"
     echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$HOME/.profile"
     echo "Note: $BIN_DIR added to PATH in ~/.profile. Log out/in or source it to apply."
   fi
 
   for rc in "${SHELL_RC_FILES[@]}"; do
     if [[ -f "$rc" ]]; then
-      if ! grep -q "export PATH=.*\\$HOME/.bin" "$rc" 2>/dev/null; then
-        printf "\n# Added by bin-installer: ensure ~/.bin is in PATH\nexport PATH=\"$BIN_DIR:\$PATH\"\n" >> "$rc"
+      if ! grep -q "export PATH=.*\\$HOME/.local/bin" "$rc" 2>/dev/null; then
+        printf "\n# Added by bin-installer: ensure ~/.local/bin is in PATH\nexport PATH=\"$BIN_DIR:\$PATH\"\n" >> "$rc"
         echo "Appended PATH export to $rc"
       fi
     fi

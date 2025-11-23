@@ -1,114 +1,157 @@
-# Some Little Scripts
+#
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
-![Stars](https://img.shields.io/github/stars/Freaky2112/Scripts)
+![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![OS](https://img.shields.io/badge/OS-Linux-yellow?style=flat-square)
 
----
+![Stars](https://img.shields.io/github/stars/Freaky2112/Scripts) ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
 
-## 📑 Table of Contents
+# **Scripts**
 
-- [Check Disk Space](/Diskspace)
-- [Check Info of Machine](/My_info)
-- [Process Killer](/Process_kill)
-- [Public IP Finder](/Public_IP)
-- [Password Generator](/Pwd_generator)
-- [Menu for SSH](/SSHkey)
-- [Random sudo MSG](/Sudo_prompt)
-- [Tmux Session Manager](/Tmux/)
-- [Cleanup Temporary files](/Temp_cleanup)
-- [Interactive Rsync](/Backup/)
-- [Monero](/Monero)
-- [Gemini](/Gemini)
+A structured, modular collection of Bash scripts designed to automate common system tasks for developers, administrators, and power users. Each script is lightweight, self-contained, and focused on solving a specific problem clearly and reliably.
 
 ---
 
-## ⚙️ Installation
+## **📌 About**
 
-Just download the Repo and run the installer `<br>`
-He bring you a menu to choose witch scripts to install `<br>`
+This repository serves as both a **ready-to-use toolbox** and a **learning reference** for clean, practical shell scripting. The tools included help streamline system diagnostics, automation, networking, backups, cleanup, and more — all while staying portable and easy to maintain.
 
-### Install
+The project emphasizes:
+
+* **Simplicity & Clarity** — Readable and easy to adapt scripts
+* **Modularity** — Each utility lives in its own folder
+* **Portability** — Works on most Linux systems
+* **Practical Utility** — Tools that solve real everyday problems
+* **Selective Installation** — Install only what you need via the included installer
+
+Whether you're automating repetitive tasks or building your own CLI tooling, these scripts provide a clean and organized foundation.
+
+---
+
+## **✨ Features**
+
+Here’s what you’ll find inside:
+
+### **System & Hardware Tools**
+
+* Disk space checks
+* System information summary
+* Public IP lookup
+* Hardware/network helpers
+
+### **Process & Session Management**
+
+* Process killer / analyzer
+* Tmux session manager
+* Service helpers
+
+### **Networking & Security**
+
+* SSH key management menu
+* Password generator
+* IP and connectivity utilities
+
+### **Cleanup & Maintenance**
+
+* Temporary file cleanup
+* Log cleanup helpers
+* System tidy scripts
+
+### **Backup & Sync**
+
+* Interactive rsync wrapper
+* Smart file operations
+
+### **Misc Utilities**
+
+* Wrapper scripts
+* Menu-driven helpers
+* Quality-of-life automation scripts
+
+*(Your actual list may vary — scripts are organized by folder for easy navigation.)*
+
+---
+
+## **📂 Repository Structure**
+
+```
+Scripts/
+ ├── ScriptName1/
+ │    ├── script.sh
+ │    └── README.md
+ ├── ScriptName2/
+ ├── install
+ ├── uninstall
+ └── README.md  (this file)
+```
+
+Each script folder contains:
+
+* The standalone script
+* Any required assets or helper files
+* A mini-README if needed
+
+---
+
+## **🚀 Installation**
+
+You can install scripts system-wide or selectively.
+
+### **1. Clone the repository**
 
 ```bash
 git clone https://github.com/Freaky2112/Scripts.git
-cd Scrpits
-chmod +x install
+cd Scripts
+```
+
+### **2. Run the installer**
+
+```bash
 ./install
 ```
 
----
+The installer allows you to:
 
-## ✨ Features
-
-- ✅ Disk Space : give you -> the diskusage with warning
-- ✅ My INfo : give you -> user/date/uptime/diskspace/local IP
-- ✅ Process Killer : Let you kill the top 10 Process that use the most Mem and CPU
-- ✅ Public Ip Finder : show you what is your Wan IP address
-- ✅ Password Generator : Small Password Generator
-- ✅ Menu for SSH : Menu to manage all ssh stuff
-- ✅ Random Sudo MSG : give you random MSG when you sudo
-- ✅ Tmux Session Manager: check for tmux session , create and close sessions
-- ✅ Clean up Temporary files : let you chose witch temps files to clean
-- ✅ Interactive Rsync : let you choose the Host and Destination and ask for folder to backup and where to copy it
-- ✅ Monero : Script to uninstall oceanstream miner script
-- ✅ Gemini : Gemini Wrapper check if you got the latest version and install it , start Gemini cli , save chat conversation to .txt file and make a summary of the discution in a file
+* Install everything
+* Install only selected scripts
+* Install to your PATH automatically
 
 ---
 
-## 📦 Usage
+## **🧪 Usage**
 
-Just call it with it's full name  Or make alias for the script
+Each utility is designed to be used like a normal Linux command once installed.
 
----
+Examples:
 
-## 📂 Project Structure
+```bash
+disk_usage
+tmux_manager
+password_gen
+cleanup_temp
+check_public_ip
 ```
-$USER/home/
-├── Scripts/
-│
-│ ├── Diskspace/ # Check Space Available
-│ │
-│ ├── Monero/ # Uninstall Ocean-Monero Script
-│ │
-│ ├── My_info/ # Display Hostname, Username, Local IP, ...
-│ │
-│ ├── Process_kill/ # Little Process Killer Show the 10 most mem and cpu Usage
-│ │
-│ ├── Public_IP/ # Display  Wan IP
-│ │
-│ ├── Pwd_generator/ # Little Password Generator
-│ │
-│ ├── SSHkey/ # Menu for All ssh stuff
-│ │
-│ ├── Sudo_prompt/ # Change to Sudo Prompt when ask for password
-│ │
-│ └── Temp_cleanup/ # Delete Temp files /.cache /.thumbnails /tmp /var/log 
-│
-│
-├── install
-│
-├── LICENSE
-│
-└── README.md
 
+Or run any script manually:
+
+```bash
+./ScriptName/script.sh
 ```
----
-
-## 📖 About
-
-Explain what the project does, its purpose, and why it exists.
-Give context: is it a tool, library, web app, etc.?
 
 ---
 
-## 📜 License
+## **📄 License**
 
-[MIT](LICENSE)
+This project is licensed under the **MIT License**, allowing you to freely use, modify, and distribute the scripts.
 
-<br>
-<br>
-<br>
+---
 
-![](https://img.shields.io/badge/Freaky2112-brightgreen)
+## **🤝 Contributions**
+
+Contributions, improvements, and script additions are welcome!
+Feel free to open issues, submit pull requests, or suggest new utility ideas.
+
+---
+
+## **⭐ Support**
+
+If you find this repo useful, consider starring it — it helps others discover it.
