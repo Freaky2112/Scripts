@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Simple menu to run scripts from .bin directory
+# Description: Scan for script create menu with Description
+
+BIN_DIR="${HOME}/.bin"  # or "./.bin" if relative to current dir
+
+# Check if directory exists
+if [[ ! -d "$BIN_DIR" ]]; then
+  echo "Error: $BIN_DIR not found!"
+  exit 1
+fi
+
+# Build arrays
+scripts=()
+descriptions=()
+
+# Collect script names and descriptions
+while IFS= read -r -d '' file; do
+  name="$(basename "$file")"
+  desc="$(grep -m1 -E '^# *Description:' "$file" 2>/dev/null | sed -E 's/^# *Description:[[:space:]]*//')"
+  desc="${desc:-No description available.}"
+  scripts+=("$file")
+  descriptions+=("$desc")
+done < <(find "$BIN_DIR" -type f -perm -u+x -print0 | sort -z)
+
+# If no scripts found
+if [[ ${#scripts[@]} -eq 0 ]]; then
+  echo "No executable scripts found in $BIN_DIR"
+  exit 0
+fi
+
+# Display menu
+echo "Available scripts:"
+echo "------------------"
+for i in "${!scripts[@]}"; do
+  printf "%2d) %-20s — %s\n" "$((i+1))" "$(basename "${scripts[$i]}")" "${descriptions[$i]}"
+done
+
+echo
+read -p "Select a script to run (1-${#scripts[@]} or q to quit): " choice
+
+# Handle input
+if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#scripts[@]} )); then
+  echo "Running: ${scripts[$((choice-1))]}"
+  echo "--------------------------------"
+  "${scripts[$((choice-1))]}"
+else
+  echo "Aborted."
+  exit 0
+fi

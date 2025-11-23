@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
-#
-# SSH Menu  (Whiptail Edition)
-# Author: Freaky
-# Description:
-#   Interactive menu to SSH, create key, delete key, and manage config file.
+# Full-featured SSH Key & Server Manager with config updates and history
 
 KEY_DIR="$HOME/.ssh"
 HISTORY_FILE="$HOME/.ssh_manager_history"

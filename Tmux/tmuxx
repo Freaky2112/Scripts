@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+#
+# TMUX Session Manager (Color Edition)
+# Author: Freaky
+# Description:
+# Interactive colorful menu to attach, create, or kill tmux sessions.
+
+# ========================
+# Colors Variable
+# ========================
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+CYAN='\033[1;36m'
+WHITE='\033[1;37m'
+ORANGE='\e[38;5;215m'
+BLEUISH='\e[38;5;111m'
+RESET='\033[0m'
+
+# =====================================
+# Function Tmux Active Session Checker 
+# =====================================
+list_sessions() {
+    tmux list-sessions -F "#{session_name}" 2>/dev/null
+}
+
+# ========================
+# Function Header
+# ========================
+header() {
+    clear
+    echo -e "${BLUE}==============================="
+    echo -e "        ${WHITE}TMUX SESSION MENU${BLUE}       "
+    echo -e "===============================${RESET}"
+    echo
+}
+
+# ========================
+# Function Menu
+# ========================
+main_menu() {
+    header
+
+    sessions=($(list_sessions))
+    session_count=${#sessions[@]}
+
+    if (( session_count > 0 )); then
+        echo -e "${CYAN}Active sessions:${RESET}"
+        for i in "${!sessions[@]}"; do
+            printf " ${BLUE}[%d]${BLEUISH} %s\n" "$((i+1))" "${sessions[$i]}"
+        done
+        echo
+        echo -e "${GREEN}[N] New session"
+        echo -e "${RED}[K] Kill a session"
+        echo -e "${WHITE}[Q] Quit"
+        echo -e "${RESET}"
+        read -rp "Select a session number or option: " choice
+
+        case "$choice" in
+            [0-9]*)
+                if (( choice >= 1 && choice <= session_count )); then
+                    tmux attach-session -t "${sessions[$((choice-1))]}"
+                else
+                    echo -e "${RED}Invalid choice!${RESET}"
+                    sleep 1
+                    main_menu
+                fi
+                ;;
+            [Nn])
+                create_session
+                ;;
+            [Kk])
+                kill_session
+                ;;
+            [Qq])
+                echo -e "${GREEN}Goodbye!${RESET}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}Invalid choice!${RESET}"
+                sleep 1
+                main_menu
+                ;;
+        esac
+    else
+        echo -e "${YELLOW}No active tmux sessions found.${RESET}"
+        echo
+        read -rp "Create a new session? (y/n): " newchoice
+        case "$newchoice" in
+            [Yy]*) create_session ;;
+            *) echo -e "${GREEN}Goodbye!${RESET}"; exit 0 ;;
+        esac
+    fi
+}
+
+# =============================
+# Function Create Tmux Session
+# =============================
+create_session() {
+    echo
+    read -rp "Enter a new session name: " session_name
+    if [[ -z "$session_name" ]]; then
+        echo -e "${RED}Session name cannot be empty!${RESET}"
+        sleep 1
+        main_menu
+    else
+        echo -e "${CYAN}Starting new session '${WHITE}$session_name${CYAN}'...${RESET}"
+        sleep 0.5
+        tmux new-session -s "$session_name"
+    fi
+}
+
+# ========================
+# Function Session Killer
+# ========================
+kill_session() {
+    header
+    echo -e "${RED}========= KILL A TMUX SESSION =========${RESET}"
+    echo
+
+    sessions=($(list_sessions))
+    session_count=${#sessions[@]}
+
+    if (( session_count == 0 )); then
+        echo -e "${YELLOW}No active sessions to kill.${RESET}"
+        sleep 2
+        main_menu
+    fi
+
+  # ===================================
+  # Alternating colors for readability
+  # ===================================
+    for i in "${!sessions[@]}"; do
+        color=$([[ $((i % 2)) -eq 0 ]] && echo "${ORANGE}" || echo "${YELLOW}")
+        printf " ${color}[%d] %s\n" "$((i+1))" "${sessions[$i]}"
+    done
+    echo 
+    echo -e " ${RED}[A] Kill ALL sessions"
+    echo -e " ${CYAN}[C] Cancel"
+    echo -e ${RESET}
+    read -rp "Select a session number, A to kill all, or C to cancel: " kill_choice
+
+    case "$kill_choice" in
+        [0-9]*)
+            if (( kill_choice >= 1 && kill_choice <= session_count )); then
+                target="${sessions[$((kill_choice-1))]}"
+                read -rp "Are you sure you want to kill '${target}'? (y/n): " confirm
+                if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                    tmux kill-session -t "$target"
+                    echo -e "${RED}Session '${target}' killed.${RESET}"
+                    sleep 1
+                else
+                    echo -e "${YELLOW}Cancelled.${RESET}"
+                    sleep 1
+                fi
+            else
+                echo -e "${RED}Invalid choice!${RESET}"
+                sleep 1
+            fi
+            ;;
+        [Aa])
+            echo -en "⚠️  ${RED}Kill ALL tmux sessions?${RESET} (y/n): "
+            read confirm_all
+            if [[ "$confirm_all" =~ ^[Yy]$ ]]; then
+                if [[ -n "$TMUX" ]]; then
+                    echo -e "${YELLOW}⚠️  You’re inside tmux. Exit tmux first to kill all sessions.${RESET}"
+                    sleep 2
+                else
+                    tmux kill-server
+                    echo -e "${RED}💀 All tmux sessions killed.${RESET}"
+                    sleep 1
+                fi
+            else
+                echo -e "${YELLOW}Cancelled.${RESET}"
+                sleep 1
+            fi
+            ;;
+        [Cc])
+            ;;
+        *)
+            echo -e "${RED}Invalid input!${RESET}"
+            sleep 1
+            ;;
+    esac
+
+    main_menu
+}
+
+main_menu

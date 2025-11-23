@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Author: Freaky
+# Description:
 
 # Color codes
 BLUE="\e[38;5;33m"
