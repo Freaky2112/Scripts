@@ -1,5 +1,5 @@
 #
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
 
 ![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![OS](https://img.shields.io/badge/OS-Linux-yellow?style=flat-square)
 
