@@ -1,8 +1,9 @@
 # **Scripts**
 
-![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts?style=flat-square) ![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue)
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
-![OS](https://img.shields.io/badge/OS-Linux-blue?style=flat-square) ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
+![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts?style=flat-square) ![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+
+![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square) ![OS](https://img.shields.io/badge/OS-Linux-blue?style=flat-square) ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
+
 ![Stars](https://img.shields.io/github/stars/Freaky2112/Scripts)
 
 A structured, modular collection of Bash scripts designed to automate common system tasks for developers, administrators, and power users. Each script is lightweight, self-contained, and focused on solving a specific problem clearly and reliably.
