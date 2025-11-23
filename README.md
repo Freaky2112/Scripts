@@ -20,6 +20,7 @@
 - [Cleanup Temporary files](/Temp_cleanup)
 - [Interactive Rsync](/Backup/)
 - [Monero](/Monero)
+- [Gemini](/Gemini)
 
 ---
 
@@ -42,7 +43,7 @@ chmod +x install
 ## ✨ Features
 
 - ✅ Disk Space : give you -> the diskusage with warning
-- ✅ Ny INfo : give you -> user/date/uptime/diskspace/local IP
+- ✅ My INfo : give you -> user/date/uptime/diskspace/local IP
 - ✅ Process Killer : Let you kill the top 10 Process that use the most Mem and CPU
 - ✅ Public Ip Finder : show you what is your Wan IP address
 - ✅ Password Generator : Small Password Generator
@@ -50,8 +51,9 @@ chmod +x install
 - ✅ Random Sudo MSG : give you random MSG when you sudo
 - ✅ Tmux Session Manager: check for tmux session , create and close sessions
 - ✅ Clean up Temporary files : let you chose witch temps files to clean
-- ✅ Interactive Rsync : let you choose the Host and Destination and ask for folder to backup and where to copy it 
+- ✅ Interactive Rsync : let you choose the Host and Destination and ask for folder to backup and where to copy it
 - ✅ Monero : Script to uninstall oceanstream miner script
+- ✅ Gemini : Gemini Wrapper check if you got the latest version and install it , start Gemini cli , save chat conversation to .txt file and make a summary of the discution in a file
 
 ---
 
