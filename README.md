@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+#
+>>>>>>> aa5c087ed7ab24a33ab6df2188b7a8dc88d2e48e
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
 
 ![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![OS](https://img.shields.io/badge/OS-Linux-yellow?style=flat-square)
