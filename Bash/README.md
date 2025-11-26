@@ -157,4 +157,4 @@ If you find this repo useful, consider starring it — it helps others discover 
 ----------------------------------------------------------------------------------
 
 ## 📊 Project Status
-![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/Bash?style=flat-square&color=green)
+![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts?style=flat-square&color=green)
