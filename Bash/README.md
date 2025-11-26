@@ -1,4 +1,3 @@
-#
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
 
 ![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![OS](https://img.shields.io/badge/OS-Linux-yellow?style=flat-square)
@@ -155,3 +154,7 @@ Feel free to open issues, submit pull requests, or suggest new utility ideas.
 ## **⭐ Support**
 
 If you find this repo useful, consider starring it — it helps others discover it.
+----------------------------------------------------------------------------------
+
+## 📊 Project Status
+![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/Bash?style=flat-square&color=green)
