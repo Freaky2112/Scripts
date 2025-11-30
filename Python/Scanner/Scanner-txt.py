@@ -6,14 +6,17 @@ from datetime import datetime
 
 try:
     from PIL import Image
+    import pytesseract
 except ImportError:
-    print("Installing required packages...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
-    from PIL import Image
+    print("\nRequired packages not found!")
+    print("Please install them using:")
+    print("  sudo apt-get install python3-pil python3-pytesseract tesseract-ocr")
+    print("\nThen run the script again.")
+    sys.exit(1)
 
 def get_next_scan_number(directory):
     """Find the next available scan number"""
-    existing_files = [f for f in os.listdir(directory) if f.startswith("scan") and f.endswith(".pdf")]
+    existing_files = [f for f in os.listdir(directory) if f.startswith("scan") and f.endswith(".txt")]
 
     if not existing_files:
         return 1
@@ -21,8 +24,8 @@ def get_next_scan_number(directory):
     numbers = []
     for filename in existing_files:
         try:
-            # Extract number from filename like "scan01.pdf"
-            num_str = filename.replace("scan", "").replace(".pdf", "")
+            # Extract number from filename like "scan01.txt"
+            num_str = filename.replace("scan", "").replace(".txt", "")
             numbers.append(int(num_str))
         except ValueError:
             continue
@@ -51,7 +54,7 @@ def check_scanner():
         return True  # Allow to continue even if detection times out
 
 def scan_document(save_directory=None, device=None):
-    """Scan a document and save as PDF with auto-incrementing filename"""
+    """Scan a document and save as text file with auto-incrementing filename"""
 
     # Use current directory if none specified
     if save_directory is None:
@@ -62,7 +65,7 @@ def scan_document(save_directory=None, device=None):
 
     # Get next scan number
     scan_num = get_next_scan_number(save_directory)
-    filename = f"scan{scan_num:02d}.pdf"
+    filename = f"scan{scan_num:02d}.txt"
     filepath = os.path.join(save_directory, filename)
     temp_image_path = os.path.join(save_directory, "temp_scan.tiff")
 
@@ -70,13 +73,13 @@ def scan_document(save_directory=None, device=None):
 
     try:
         # Build scanimage command
-        # --resolution 300: Max DPI
+        # --resolution 600: Max DPI
         # --mode Lineart: Black & White (also try "Gray" for grayscale)
         # --format tiff: Output format
 
         cmd = [
             'scanimage',
-            '--resolution', '300',
+            '--resolution', '600',
             '--mode', 'Lineart',
             '--format', 'tiff',
             '--output-file', temp_image_path
@@ -86,7 +89,7 @@ def scan_document(save_directory=None, device=None):
         if device:
             cmd.extend(['--device-name', device])
 
-        print("Scanning at 300 DPI, Black & White mode...")
+        print("Scanning at 600 DPI, Black & White mode...")
         print("Please wait, this may take a moment...")
 
         # Execute scan
@@ -101,24 +104,36 @@ def scan_document(save_directory=None, device=None):
             print("Error: Scan file was not created.")
             return False
 
-        print("Converting to PDF...")
+        print("Performing OCR (text recognition)...")
 
-        # Open and convert to PDF
+        # Open image and perform OCR
         img = Image.open(temp_image_path)
 
-        # Convert to RGB if necessary (for PDF compatibility)
-        if img.mode not in ['RGB', 'L']:
-            img = img.convert('RGB')
+        # Perform OCR using Tesseract
+        try:
+            text = pytesseract.image_to_string(img)
 
-        # Save as PDF
-        img.save(filepath, "PDF", resolution=100.0)
+            # Save as text file
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(text)
 
-        # Clean up temp file
-        os.remove(temp_image_path)
+            # Clean up temp file
+            os.remove(temp_image_path)
 
-        print(f"✓ Scan complete! Saved as: {filepath}")
-        print(f"  Next scan will be: scan{scan_num+1:02d}.pdf")
-        return True
+            print(f"✓ Scan complete! Saved as: {filepath}")
+            print(f"  Text extracted: {len(text)} characters")
+            print(f"  Next scan will be: scan{scan_num+1:02d}.txt")
+            return True
+
+        except Exception as ocr_error:
+            print(f"OCR Error: {str(ocr_error)}")
+            print("\nTesseract may not be installed. Install with:")
+            print("  sudo apt-get install tesseract-ocr")
+
+            # Clean up temp file
+            if os.path.exists(temp_image_path):
+                os.remove(temp_image_path)
+            return False
 
     except subprocess.TimeoutExpired:
         print("Error: Scan timed out. The scanner may be busy or disconnected.")
@@ -176,7 +191,7 @@ def main():
         save_dir = os.getcwd()
 
     print(f"\nScans will be saved to: {save_dir}")
-    print("Settings: 300 DPI, Black & White")
+    print("Settings: 600 DPI, Black & White, OCR to Text")
     print()
 
     while True:
