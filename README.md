@@ -6,6 +6,8 @@
 
 # **Scripts**
 
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white&color=293137) ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
 Welcome to the **ultimate scripts playground**! 🚀
 A small collection of Bash, Python, Windows, and experimental scripts — all in one repo for your tinkering pleasure.
 
@@ -34,6 +36,7 @@ git clone https://github.com/Freaky2112/Scripts.git
 cd Scripts
 git checkout
 ```
+
 Run scripts like a boss:
 
 ```bash
@@ -63,18 +66,19 @@ Scripts/
 
 ## 🚧 Disclaimer
 
-These scripts are **experimental** — may break, explode, or just do nothing.  
+These scripts are **experimental** — may break, explode, or just do nothing.
 Use at your own risk. 🔥
 
 ---
 
 ## 📝 License
 
-MIT License — check the [LICENSE](LICENSE) file.  
+MIT License — check the [LICENSE](LICENSE) file.
 
 ---
 
 ## 📊 Project Status
 
-![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts?style=flat-square&color=green)
+![DEV](https://img.shields.io/badge/Main-F05032?style=for-the-badge&logo=git&logoColor=red&color=blue) ![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts?style=flat-square&color=green)
 
+![DEV](https://img.shields.io/badge/In--Dev-F05032?style=for-the-badge&logo=git&logoColor=red&color=B0A6FF) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/In-Dev?style=flat-square&color=green)
