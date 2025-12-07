@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Internal Server Error</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000000;
+            color: #00ff00;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .matrix-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            animation: scan 4s linear infinite;
+            opacity: 0.5;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .glitch-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.05) 0px,
+                rgba(0, 0, 0, 0) 2px,
+                rgba(0, 0, 0, 0) 4px,
+                rgba(0, 255, 0, 0.05) 6px
+            );
+            pointer-events: none;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            padding: 40px;
+            max-width: 1000px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #00ff00;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 0, 0.3),
+                inset 0 0 20px rgba(0, 255, 0, 0.1);
+            position: relative;
+            animation: fadeIn 1.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ff00, transparent, #00ff00);
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .error-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            color: #00ff00;
+            text-shadow: 
+                0 0 10px #00ff00,
+                0 0 20px #00ff00,
+                0 0 30px #00ff00;
+            letter-spacing: 15px;
+            animation: glitch 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 2px); }
+            94% { transform: translate(2px, -2px); }
+            96% { transform: translate(-2px, -2px); }
+            98% { transform: translate(2px, 2px); }
+        }
+
+        .binary-404 {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            color: #00cc00;
+            letter-spacing: 3px;
+            opacity: 0.8;
+        }
+
+        .warning-icon {
+            font-size: 5rem;
+            color: #ff0000;
+            animation: blink 1s ease-in-out infinite;
+            text-shadow: 0 0 20px #ff0000;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .terminal-box {
+            background: rgba(0, 20, 0, 0.9);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+            font-size: 0.95rem;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        .terminal-line {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .terminal-prompt {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .terminal-status {
+            color: #ff0000;
+        }
+
+        .terminal-success {
+            color: #00ff00;
+        }
+
+        .terminal-warning {
+            color: #ffaa00;
+        }
+
+        .terminal-label {
+            color: #00cc00;
+            min-width: 150px;
+        }
+
+        .terminal-value {
+            color: #00ff00;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background: #00ff00;
+            animation: cursor-blink 1s step-end infinite;
+            margin-left: 5px;
+        }
+
+        @keyframes cursor-blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .message {
+            font-size: 1.2rem;
+            color: #00cc00;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+
+        .binary-stream {
+            font-size: 0.8rem;
+            color: #00ff00;
+            opacity: 0.6;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 5rem;
+                letter-spacing: 10px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .container {
+                padding: 20px;
+            }
+            .terminal-box {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas class="matrix-canvas" id="matrixCanvas"></canvas>
+    <div class="scan-line"></div>
+    <div class="glitch-overlay"></div>
+    
+    <div class="container">
+        <div class="error-header">
+            <div>
+                <div class="error-code">500</div>
+                <div class="binary-404">01000101 01010010 01010010 01001111 01010010</div>
+            </div>
+            <div class="warning-icon">⚠</div>
+        </div>
+        
+        <h1>[ Internal Server Error ]</h1>
+        <p class="message">CRITICAL FAILURE :: SERVER MALFUNCTION DETECTED</p>
+        
+        <div class="terminal-box">
+            <div class="terminal-line">
+                <span class="terminal-prompt">></span>
+                <span class="terminal-label">System Status:</span>
+                <span class="terminal-status">[ CRITICAL ]</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">></span>
+                <span class="terminal-label">HTTP Response:</span>
+                <span class="terminal-value">500 SERVER ERROR</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">></span>
+                <span class="terminal-label">Server State:</span>
+                <span class="terminal-status">UNSTABLE</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">></span>
+                <span class="terminal-label">Process Status:</span>
+                <span class="terminal-status">CRASHED</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">></span>
+                <span class="terminal-label">Recovery Mode:</span>
+                <span class="terminal-warning">INITIATED</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">></span>
+                <span>Awaiting input<span class="cursor"></span></span>
+            </div>
+        </div>
+
+        <div class="binary-stream">
+            01010011 01100101 01110010 01110110 01100101 01110010 00100000 01000101 01110010 01110010 01101111 01110010
+        </div>
+    </div>
+
+    <script>
+        // Matrix Rain Effect
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = '01';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * canvas.height / fontSize;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 50);
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
