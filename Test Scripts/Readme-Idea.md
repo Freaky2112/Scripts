@@ -1,8 +1,18 @@
 # Standard : Status Project
 
-![DEV](https://img.shields.io/badge/Main-F05032?style=for-the-badge&logo=git&logoColor=red&color=blue) ![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts?style=flat-square&color=green)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
 
-![DEV](https://img.shields.io/badge/In--Dev-F05032?style=for-the-badge&logo=git&logoColor=red&color=B0A6FF) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/In-Dev?style=flat-square&color=green)
+![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![OS](https://img.shields.io/badge/OS-Linux-yellow?style=flat-square) ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
+
+![Stars](https://img.shields.io/github/stars/Freaky2112/Scripts)
+
+![Main](https://img.shields.io/badge/Main-F05032?style=for-the-badge&logo=git&logoColor=red&color=blue) ![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/main?style=flat-square&color=green) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/Freaky2112/Scripts/main?color=purple)
+
+![DEV](https://img.shields.io/badge/In--Dev-F05032?style=for-the-badge&logo=git&logoColor=red&color=B0A6FF) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/In-Dev?style=flat-square&color=green) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/Freaky2112/Scripts/In-Dev?color=purple)
+
+<!-- Star badge disabled because repo is private
+![Stars](https://img.shields.io/github/stars/Freaky2112/repo)
+-->
 
 ## Idea for dev and Language:
 
