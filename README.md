@@ -107,5 +107,3 @@ MIT License — check the [LICENSE](LICENSE) file.
 ![Main](https://img.shields.io/badge/Main-F05032?style=for-the-badge&logo=git&logoColor=red&color=blue) ![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/main?style=flat-square&color=green)
 
 ![DEV](https://img.shields.io/badge/In--Dev-F05032?style=for-the-badge&logo=git&logoColor=red&color=B0A6FF) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/In-Dev?style=flat-square&color=green) ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/Freaky2112/Scripts/In-Dev?color=purple)
-
-
