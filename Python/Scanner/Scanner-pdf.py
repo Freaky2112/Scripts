@@ -70,13 +70,13 @@ def scan_document(save_directory=None, device=None):
 
     try:
         # Build scanimage command
-        # --resolution 300: Max DPI
+        # --resolution 600: Max DPI
         # --mode Lineart: Black & White (also try "Gray" for grayscale)
         # --format tiff: Output format
 
         cmd = [
             'scanimage',
-            '--resolution', '300',
+            '--resolution', '600',
             '--mode', 'Lineart',
             '--format', 'tiff',
             '--output-file', temp_image_path
@@ -86,7 +86,7 @@ def scan_document(save_directory=None, device=None):
         if device:
             cmd.extend(['--device-name', device])
 
-        print("Scanning at 300 DPI, Black & White mode...")
+        print("Scanning at 600 DPI, Black & White mode...")
         print("Please wait, this may take a moment...")
 
         # Execute scan
@@ -176,7 +176,7 @@ def main():
         save_dir = os.getcwd()
 
     print(f"\nScans will be saved to: {save_dir}")
-    print("Settings: 300 DPI, Black & White")
+    print("Settings: 600 DPI, Black & White")
     print()
 
     while True:

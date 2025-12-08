@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000000;
+            color: #00ff00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .message {
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .dots {
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="message">
+        Redirecting<span class="dots">...</span>
+    </div>
+
+    <script>
+        // Define the range of error codes you have
+        const errorCodes = [
+            400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 
+            410, 411, 413, 414, 415, 429,
+            500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511
+        ];
+
+        // Pick a random error code
+        const randomCode = errorCodes[Math.floor(Math.random() * errorCodes.length)];
+
+        // Try to load the page, if it doesn't exist, fallback to 404
+        const randomPage = randomCode + '.html';
+        
+        // Attempt to redirect
+        fetch(randomPage, { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = randomPage;
+                } else {
+                    window.location.href = '404.html';
+                }
+            })
+            .catch(() => {
+                window.location.href = '404.html';
+            });
+    </script>
+</body>
+</html>

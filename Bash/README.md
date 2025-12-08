@@ -1,10 +1,12 @@
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) ![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)![ShellCheck](https://img.shields.io/badge/code%20quality-shellcheck-brightgreen?style=flat-square)
 
 ![GitHub license](https://img.shields.io/github/license/Freaky2112/Scripts?style=flat-square&color=blue) ![OS](https://img.shields.io/badge/OS-Linux-yellow?style=flat-square)
 
 ![Stars](https://img.shields.io/github/stars/Freaky2112/Scripts) ![Contributions](https://img.shields.io/badge/contributions-welcome-orange.svg)
 
-# **Scripts**
+# **Bash Scripts**
+
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white&color=293137)
 
 A structured, modular collection of Bash scripts designed to automate common system tasks for developers, administrators, and power users. Each script is lightweight, self-contained, and focused on solving a specific problem clearly and reliably.
 
@@ -73,13 +75,27 @@ Here’s what you’ll find inside:
 ## **📂 Repository Structure**
 
 ```
-Scripts/
- ├── ScriptName1/
- │    ├── script.sh
- │    └── README.md
- ├── ScriptName2/
+Bash/
+ ├── Backup/
+ ├── Bashrc/
+ ├── Diskspace/
+ ├── Dockers/
+ ├── Gemini/
+ ├── Monero/
+ ├── My_info/
+ ├── NutStatus/
+ ├── Process_kill/
+ ├── Public_IP/
+ ├── Pwd_generator/
+ ├── SSHkey/
+ ├── SSHmenu/
+ ├── Sudo_prompt/
+ ├── Temp_cleanup/
+ ├── Tmux/
+ ├── Bash_color.txt
  ├── install
- ├── uninstall
+ ├── LICENSE
+ ├── Main
  └── README.md  (this file)
 ```
 
@@ -157,4 +173,5 @@ If you find this repo useful, consider starring it — it helps others discover 
 ----------------------------------------------------------------------------------
 
 ## 📊 Project Status
-![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/Bash?style=flat-square&color=green)
+
+![GitHub issues](https://img.shields.io/github/issues/Freaky2112/Scripts?style=flat-square&color=red) ![GitHub last commit](https://img.shields.io/github/last-commit/Freaky2112/Scripts/main?style=flat-square&color=green)
