@@ -44,6 +44,7 @@
 | C          | ![C](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logocolor=white)                            |
 | R          | ![R](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logocolor=white)                            |
 | Perl       | ![Perl](https://img.shields.io/badge/Perl-39457E?style=for-the-badge&logo=perl&logocolor=white)                   |
+|HTML        | ![HTML](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)                   |
 
 | Framework / Library | Badge                                                                                                  |
 | ------------------- | ------------------------------------------------------------------------------------------------------ |
