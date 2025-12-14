@@ -3,13 +3,14 @@
 
 set -euo pipefail
 
-echo "Removing old installation..."
+echo "🖥️➖ Removing old installation..."
 sudo rm -rf /usr/local/lib/node_modules/@google/gemini-cli
 
-echo "Clearing npm cache..."
+echo "🧠💨 Clearing npm cache..."
 sudo npm cache clean --force
 
-echo "Installing latest Gemini CLI..."
+echo "⚙️⬇️ Installing latest Gemini CLI..."
 sudo npm install -g @google/gemini-cli@latest
 
-echo "Verifying installation..."
+echo "⚙️✅ Verifying installation..."
+gemini --version
