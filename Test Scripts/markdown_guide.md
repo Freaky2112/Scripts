@@ -4,17 +4,17 @@
 
 Use `#` for the main title of your document.
 
-``` md
+```md
 # My Project Documentation
 ```
 
 ## 2. Use Headings to Structure Your Content
 
-`#` → Title\
-`##` → Sections\
+`#` → Title
+`##` → Sections
 `###` → Subsections
 
-``` md
+```md
 ## Installation
 ### Requirements
 ```
@@ -25,7 +25,7 @@ Markdown prefers clean spacing.
 
 ## 4. Use Bullet Lists for Clarity
 
-``` md
+```md
 - Item one
 - Item two
 - Item three
@@ -33,33 +33,32 @@ Markdown prefers clean spacing.
 
 Numbered list:
 
-``` md
+```md
 1. First step
 2. Second step
 ```
 
 ## 5. Use Bold/Italic for Emphasis
 
-``` md
+```md
 **Bold text**
 *Italic text*
 ```
 
 ## 6. Add Code Blocks
 
-``` md
+```md
 ```bash
 sudo apt install nginx
 ```
 
-
     ## 7. Blockquotes
     ```md
-    > **Note:** Backup your files before continuing.
+    >**Note:** Backup your files before continuing.
 
 ## 8. Tables
 
-``` md
+```md
 | Name | Type | Notes |
 |------|------|-------|
 | API  | REST | v1.0  |
@@ -68,22 +67,22 @@ sudo apt install nginx
 
 ## 9. Links and Images
 
-``` md
+```md
 [OpenAI](https://www.openai.com)
 ![Alt text](./image.png)
 ```
 
 ## 10. Horizontal Lines
 
-``` md
+```md
 ---
 ```
 
-------------------------------------------------------------------------
+---
 
 # Example: README.md
 
-``` md
+```md
 # My Awesome Project
 
 This project is a simple example showing how to structure a README file in Markdown.
@@ -106,10 +105,9 @@ npm install
 
 ## 🛠 Usage
 
-``` bash
+```bash
 npm start
 ```
-
 
     ---
 
@@ -131,17 +129,16 @@ npm start
 
 ### Step 2 --- Assign DHCP
 
-``` bash
+```bash
 set service dhcp-server shared-network-name VLAN10 subnet 192.168.10.0/24 range 0 start 192.168.10.100
 set service dhcp-server shared-network-name VLAN10 subnet 192.168.10.0/24 range 0 stop 192.168.10.200
 ```
 
 ## Testing
 
-``` bash
+```bash
 show interfaces
 ```
-
 
     ---
 
@@ -161,11 +158,12 @@ show interfaces
 
 ### Check disk
 
-``` bash
+```bash
 df -h
 ```
 
 ## References
 
--   Internal wiki
--   Vendor documentation \`\`\`
+- Internal wiki
+- Vendor documentation \`\`\`
+-
