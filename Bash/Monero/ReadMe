@@ -7,14 +7,3 @@ curl -s -L https://raw.githubusercontent.com/MoneroOcean/xmrig_setup/master/setu
 
 chmod +x uninstall_moneroocean.sh
 ./uninstall_moneroocean.sh
-
-
-
-sudo apt-get install curl
-mkdir -p ~/moneroocean && cd ~/moneroocean
-url=$(curl -fsSL https://api.github.com/repos/MoneroOcean/xmrig/releases/latest | grep browser_download_url | grep -E 'lin64-compat|lin64\.tar\.gz' | head -1 | cut -d '"' -f 4)
-curl -L "$url" -o xmrig.tar.gz && tar xf xmrig.tar.gz && chmod +x xmrig
-
-
-
-@reboot /home/freaky/xmrig/build/xmrig -o gulf.moneroocean.stream:10128 -u 45MFbC9eNUW6b6a6owNWA6PoDkHbboGAX158TNMuAGEPN1zREGUodEeFCwSPwnGVwP1sksfaBfBtRc5YPVfi7X1R85ANS4q -p Thin_Power
