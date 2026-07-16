@@ -1,0 +1,42 @@
+## My Aliases ##
+
+    # SSH AGENT  Alias
+    alias  ssha='eval $(ssh-agent -s) && ssh-add ~/.ssh/github_ed25519'
+    # Update snap Packages
+    alias snapupdate="sudo snap refresh"
+    # Install essentiel
+    alias fresh="sudo apt update && sudo apt install git curl wget net-tools tmux htop -y"
+    # What is  my ip
+    alias wip="curl icanhazip.com"
+    # Sudo Apt
+    alias apt="sudo apt"
+    # Reboot server with Sudo
+    alias reboot="sudo reboot"
+    # check open port
+    alias port="netstat -tulanp"
+    # Weather
+    alias wt="curl wttr.in"
+    # Speed Test
+    alias speed="curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python3 -"
+    # clean Trash
+    alias cleanup="rm -rf $HOME/.local/share/Trash/files/* && rm -rf $HOME/.local/share/info/*"
+    # Clean Screen
+    alias clr="clear"
+    alias cls="clear"
+    # cd  ..
+    alias ..='cd ..'
+    # sudo prompt 
+    alias sudo='sudo_random'  
+    # ls aliases
+    alias ll='ls -l'
+    alias la='ls -A'
+    alias l='ls -CF'
+    alias ls='ls --color=auto'
+    #some more alias
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+    alias diff='diff --color=auto'
+    alias ip='ip --color=auto'
+    
