@@ -19,6 +19,14 @@ shopt -s histappend
 HISTSIZE=1000
 HISTFILESIZE=2000
 
+# Set environement
+export EDITOR='nano'
+export GREP_COLOR='ms=05;33'
+export LSCOLOR='ExGxbEaECxxEhEhBaDaCaD'
+export PAGER='less'
+export TZ='America/Toronto'
+export VISUAL='nano'
+
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
@@ -56,35 +64,42 @@ if [ -n "$force_color_prompt" ]; then
     fi
 fi
 
+generate-prompt() {
 ### To Change Emoji in Prompt
 ## 👽  ☠️  💀 ❄️ ⚡ 🎱
 if [ "$color_prompt" = yes ]; then
-    time_color='\[\033[1;37m\]'
-    prompt_color='\[\e[38;5;46m\]'
-#   prompt_color='\[\033[;32m\]'
-    info_color='\[\033[1;34m\]'
-    host_color='\[\033[0;33m\]'
-    job_color='\[\033[0;36m\]'
-    jb_color='\[\033[0;31m\]'
-    cwd_color='\[\e[38;5;226m\]'
-    border_color='\[\033[38;5;111m\]'
-#   border_color='\[\033[38;5;208m\]'
-    text_color='\[\033[0;37m\]'
-    bracket='\[\e[38;5;213m\]'
-    user_color='\[\033[1;34m\]'
-    arrow_color='\[\e[38;5;199m\]'
-
     prompt_symbol=🎱
-    if [ "$EUID" -eq 0 ]; then # Change prompt colors for root user
-        time_color='\[\033[;91m\]'
-        prompt_color='\[\033[;94m\]'
-        info_color='\[\033[1;31m\]'
-        host_color='\[\033[1;37m\]'
+    if [ "$EUID" -eq 0 ]; then # Change prompt symbol for root user
         prompt_symbol=💀
     fi
 
 # Function to generate dynamic box
+# All color variables are local to this function: they're recomputed on
+# every prompt draw (via PROMPT_COMMAND) and never leak into the global
+# environment.
 generate_box() {
+    local time_color='\[\033[1;37m\]'
+    local prompt_color='\[\e[38;5;46m\]'
+#   local prompt_color='\[\033[;32m\]'
+    local info_color='\[\033[1;34m\]'
+    local host_color='\[\033[0;33m\]'
+    local job_color='\[\033[0;36m\]'
+    local jb_color='\[\033[0;31m\]'
+    local cwd_color='\[\e[38;5;226m\]'
+    local border_color='\[\033[38;5;111m\]'
+#   local border_color='\[\033[38;5;208m\]'
+    local text_color='\[\033[0;37m\]'
+    local bracket='\[\e[38;5;213m\]'
+    local user_color='\[\033[1;34m\]'
+    local arrow_color='\[\e[38;5;199m\]'
+
+    if [ "$EUID" -eq 0 ]; then # Change prompt colors for root user
+        local time_color='\[\033[;91m\]'
+        local prompt_color='\[\033[;94m\]'
+        local info_color='\[\033[1;31m\]'
+        local host_color='\[\033[1;37m\]'
+    fi
+
     local user_host="$USER$prompt_symbol$HOSTNAME"
     local time_str="\t"
     local total_length=$(( ${#user_host} + ${#time_str} + 14 )) # padding + symbols
@@ -104,6 +119,9 @@ else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
 unset color_prompt force_color_prompt
+}
+#Create Prompt from function
+generate-prompt
 
 # If this is an xterm set the title to user@host:dir
 case "$TERM" in
