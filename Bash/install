@@ -84,6 +84,45 @@ prompt_overwrite() {
   return 0
 }
 
+# Check for bat, install it if missing, and symlink batcat -> bat
+# (Debian/Ubuntu ships the binary as 'batcat' due to a name clash)
+ensure_bat() {
+  if command -v bat >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if command -v batcat >/dev/null 2>&1; then
+    ln -sf "$(command -v batcat)" "$BIN_DIR/bat"
+    echo "Linked batcat -> $BIN_DIR/bat"
+    return 0
+  fi
+
+  echo "'bat' is used by an alias in bash_aliases but isn't installed."
+  read -rp "Install bat now? [y/N]: " ans
+  case "$ans" in
+    [Yy]*)
+      if command -v apt >/dev/null 2>&1; then
+        sudo apt update && sudo apt install -y bat
+      elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y bat
+      elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --noconfirm bat
+      else
+        echo "No supported package manager found. Install 'bat' manually."
+        return 1
+      fi
+
+      if ! command -v bat >/dev/null 2>&1 && command -v batcat >/dev/null 2>&1; then
+        ln -sf "$(command -v batcat)" "$BIN_DIR/bat"
+        echo "Linked batcat -> $BIN_DIR/bat"
+      fi
+      ;;
+    *)
+      echo "Skipping bat install; the 'cat' alias in bash_aliases will fail until it's installed."
+      ;;
+  esac
+}
+
 install_file() {
   local src="$1"
   local dest="$BIN_DIR/$(basename "$src")"
@@ -105,6 +144,10 @@ install_file() {
   cp -p "$src" "$dest"
   chmod +x "$dest"
   echo "Installed: $dest"
+
+  if [[ "$(basename "$src")" == "bash_aliases" ]]; then
+    ensure_bat
+  fi
 }
 
 uninstall_menu() {
