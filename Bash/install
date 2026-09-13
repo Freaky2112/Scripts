@@ -1,223 +1,1054 @@
 #!/usr/bin/env bash
 #
 # Author: Freaky
-# Contributor: ChatGPT , Claude
-# Description:
-# Simple installer to copy selected scripts into ~/.local/bin, make them executable,
-# and optionally add ~/.local/bin to your PATH (in .bashrc/.profile/.zshrc).
-# Place this installer in the same directory as the scripts you want to install.
+# Contributors: ChatGPT, Claude
+#
+# Freaky's Scripts Installer
+#
+# Downloads the latest scripts directly from GitHub.
+# Automatically discovers Bash scripts and Bashrc alias sections.
+#
 
 set -euo pipefail
 IFS=$'\n\t'
 
+# ============================================================
+# Configuration
+# ============================================================
+
+GITHUB_REPO="Freaky2112/Scripts"
+GITHUB_BRANCH="main"
+
+REPO_SUBDIR="Bash"
+BASHRC_SUBDIR="Bash/Bashrc"
+
 BIN_DIR="$HOME/.local/bin"
-SHELL_RC_FILES=("$HOME/.bashrc" "$HOME/.profile" "$HOME/.zshrc")
+ALIAS_DIR="$HOME/.bash_aliases.d"
+
+TEMP_DIR=""
+REPO_DIR=""
+
+SKIP_ALL_OVERWRITE=false
+
+
+# ============================================================
+# Colors
+# ============================================================
+
+if [[ -t 1 ]]; then
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    CYAN='\033[0;36m'
+    NC='\033[0m'
+else
+    GREEN=''
+    RED=''
+    YELLOW=''
+    BLUE=''
+    CYAN=''
+    NC=''
+fi
+
+
+# ============================================================
+# Cleanup
+# ============================================================
+
+cleanup() {
+    if [[ -n "${TEMP_DIR:-}" && -d "$TEMP_DIR" ]]; then
+        rm -rf "$TEMP_DIR"
+    fi
+}
+
+trap cleanup EXIT
+
+
+# ============================================================
+# Usage
+# ============================================================
 
 usage() {
-  cat <<EOF
-Usage: $0 [options]
+    cat <<EOF
+
+Freaky's Scripts Installer
+
+Usage:
+  $0 [option]
 
 Options:
-  -a, --all          Install all executable-looking files in current directory and subfolders (except installer)
-  -i, --interactive  Launch an interactive menu (default)
-  -u, --uninstall    Uninstall selected scripts from $BIN_DIR
-  -h, --help         Show this help
+
+  -a, --all
+        Install all discovered Bash scripts and all alias sections.
+
+  -s, --scripts
+        Show the script selection menu.
+
+  -A, --aliases
+        Show the Bash alias selection menu.
+
+  -u, --uninstall
+        Uninstall scripts from ~/.local/bin.
+
+  -h, --help
+        Show this help.
 
 Examples:
-  $0 --interactive   # interactive menu to pick files to install
-  $0 --all           # install all files found in current dir and subfolders
-  $0 --uninstall     # interactive uninstall from ~/.local/bin
 
-All installed files will be copied into: $BIN_DIR
+  curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash
+
+  curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash -s -- --all
+
+  curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash -s -- --scripts
+
+  curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash -s -- --aliases
+
 EOF
 }
 
-# Ensure BIN_DIR exists
-prepare_bin_dir() {
-  if [[ ! -d "$BIN_DIR" ]]; then
-    mkdir -p "$BIN_DIR"
-    echo "Created $BIN_DIR"
-  fi
+
+# ============================================================
+# Check required commands
+# ============================================================
+
+check_requirements() {
+
+    local missing=()
+
+    command -v curl >/dev/null 2>&1 || missing+=("curl")
+    command -v tar  >/dev/null 2>&1 || missing+=("tar")
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+
+        echo
+        echo -e "${RED}Missing required commands:${NC}"
+
+        for cmd in "${missing[@]}"; do
+            echo "  - $cmd"
+        done
+
+        echo
+        echo "Install the missing commands and try again."
+
+        exit 1
+    fi
 }
 
-# Add BIN_DIR to PATH in user's rc files if not present
+
+# ============================================================
+# Download GitHub repository
+# ============================================================
+
+download_repository() {
+
+    echo
+    echo "=========================================="
+    echo " Downloading Freaky's Scripts"
+    echo "=========================================="
+    echo
+    echo "Repository:"
+    echo "https://github.com/$GITHUB_REPO"
+    echo
+
+    TEMP_DIR="$(mktemp -d)"
+
+    local archive="$TEMP_DIR/repository.tar.gz"
+
+    curl -fsSL \
+        "https://github.com/$GITHUB_REPO/archive/refs/heads/$GITHUB_BRANCH.tar.gz" \
+        -o "$archive"
+
+    tar -xzf "$archive" -C "$TEMP_DIR"
+
+    REPO_DIR="$(find "$TEMP_DIR" \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -type d \
+        -name 'Scripts-*' \
+        | head -n1)"
+
+    if [[ -z "$REPO_DIR" || ! -d "$REPO_DIR" ]]; then
+
+        echo -e "${RED}Unable to find downloaded repository.${NC}"
+
+        exit 1
+    fi
+
+    if [[ ! -d "$REPO_DIR/$REPO_SUBDIR" ]]; then
+
+        echo -e "${RED}Bash directory was not found:${NC}"
+        echo "$REPO_SUBDIR"
+
+        exit 1
+    fi
+
+    echo -e "${GREEN}Repository downloaded successfully.${NC}"
+    echo
+}
+
+
+# ============================================================
+# Prepare directories
+# ============================================================
+
+prepare_directories() {
+
+    if [[ ! -d "$BIN_DIR" ]]; then
+
+        mkdir -p "$BIN_DIR"
+
+        echo "Created: $BIN_DIR"
+
+    fi
+
+    if [[ ! -d "$ALIAS_DIR" ]]; then
+
+        mkdir -p "$ALIAS_DIR"
+
+        echo "Created: $ALIAS_DIR"
+
+    fi
+}
+
+
+# ============================================================
+# PATH
+# ============================================================
+
 ensure_path() {
-  if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    echo "\n# Added by bin-installer: ensure ~/.local/bin is in PATH" >> "$HOME/.profile"
-    echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$HOME/.profile"
-    echo "Note: $BIN_DIR added to PATH in ~/.profile. Log out/in or source it to apply."
-  fi
 
-  for rc in "${SHELL_RC_FILES[@]}"; do
-    if [[ -f "$rc" ]]; then
-      if ! grep -q "export PATH=.*\\$HOME/.local/bin" "$rc" 2>/dev/null; then
-        printf "\n# Added by bin-installer: ensure ~/.local/bin is in PATH\nexport PATH=\"$BIN_DIR:\$PATH\"\n" >> "$rc"
-        echo "Appended PATH export to $rc"
-      fi
+    local profile="$HOME/.profile"
+
+    if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+
+        if [[ ! -f "$profile" ]]; then
+            touch "$profile"
+        fi
+
+        if ! grep -Fq "$BIN_DIR" "$profile"; then
+
+            cat >> "$profile" <<EOF
+
+# Added by Freaky's Scripts installer
+export PATH="$BIN_DIR:\$PATH"
+EOF
+
+            echo "Added $BIN_DIR to ~/.profile"
+
+        fi
     fi
-  done
 }
 
-list_candidates() {
-  find . -type f \
-    \( -name "*.sh" -o -perm -111 -o -exec grep -Iq "^#!" {} \; -print \) \
-    -printf "%P\n" 2>/dev/null | \
-    sed '/^\./d' | \
-    grep -vE '(^|/)install(\.sh)?$' | \
-    grep -vE '(^|/)bin-installer\.sh$' | \
-    sort -u
-}
 
-prompt_overwrite() {
-  local target="$1"
-  if [[ -e "$target" ]]; then
-    while true; do
-      read -rp "$target exists — overwrite? [y]es/[n]o/[s]kip-all: " yn
-      case "$yn" in
-        [Yy]*) return 0 ;;
-        [Nn]*) return 1 ;;
-        [Ss]*) echo SKIP_ALL; return 2 ;;
-        *) echo "Please answer y, n, or s." ;;
-      esac
-    done
-  fi
-  return 0
-}
+# ============================================================
+# Bashrc alias loader
+# ============================================================
 
-install_file() {
-  local src="$1"
-  local dest="$BIN_DIR/$(basename "$src")"
+ensure_bashrc_loader() {
 
-  if [[ "$SKIP_ALL_OVERWRITE" == "true" ]]; then
-    echo "Skipping $src (skip-all in effect)"
-    return
-  fi
+    local bashrc="$HOME/.bashrc"
 
-  if [[ -e "$dest" ]]; then
-    prompt_overwrite "$dest"
-    case $? in
-      0) ;;
-      1) echo "Skipping $src"; return ;;
-      2) SKIP_ALL_OVERWRITE=true; echo "Skipping $src (skip-all set)"; return ;;
-    esac
-  fi
-
-  cp -p "$src" "$dest"
-  chmod +x "$dest"
-  echo "Installed: $dest"
-}
-
-uninstall_menu() {
-  if [[ ! -d "$BIN_DIR" ]]; then
-    echo "$BIN_DIR does not exist. Nothing to uninstall."
-    exit 0
-  fi
-  mapfile -t files < <(ls -1A "$BIN_DIR" 2>/dev/null || true)
-  if [[ ${#files[@]} -eq 0 ]]; then
-    echo "No files found in $BIN_DIR"
-    exit 0
-  fi
-  echo "Select files to uninstall (space-separated numbers), or 'all' to remove all:"
-  for i in "${!files[@]}"; do
-    printf "%3d) %s\n" $((i+1)) "${files[$i]}"
-  done
-  read -rp "Selection: " sel
-  if [[ "$sel" == "all" ]]; then
-    for f in "${files[@]}"; do
-      rm -f "$BIN_DIR/$f" && echo "Removed $BIN_DIR/$f"
-    done
-    exit 0
-  fi
-  for token in $sel; do
-    if [[ $token =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#files[@]} )); then
-      f=${files[$((token-1))]}
-      rm -f "$BIN_DIR/$f" && echo "Removed $BIN_DIR/$f"
-    else
-      echo "Skipping invalid selection: $token"
+    if [[ ! -f "$bashrc" ]]; then
+        touch "$bashrc"
     fi
-  done
-}
 
-interactive_install() {
-  mapfile -t candidates < <(list_candidates)
-  if [[ ${#candidates[@]} -eq 0 ]]; then
-    echo "No candidate scripts found in the current directory or subfolders."
-    exit 1
-  fi
-
-  echo "Found the following candidate scripts under $(pwd):"
-  for i in "${!candidates[@]}"; do
-    printf "%3d) %s\n" $((i+1)) "${candidates[$i]}"
-  done
-
-  echo "Enter numbers separated by spaces to install, 'all' to install all, or 'q' to quit."
-  read -rp "Selection: " selection
-  if [[ "$selection" == "q" ]]; then
-    echo "Aborted."
-    exit 0
-  fi
-  if [[ "$selection" == "all" ]]; then
-    for f in "${candidates[@]}"; do
-      install_file "$f"
-    done
-    return
-  fi
-
-  for token in $selection; do
-    if [[ $token =~ ^[0-9]+$ ]] && (( token >= 1 && token <= ${#candidates[@]} )); then
-      f=${candidates[$((token-1))]}
-      install_file "$f"
-    else
-      echo "Skipping invalid selection: $token"
+    if grep -Fq "Freaky's Scripts - Bash Aliases" "$bashrc"; then
+        return 0
     fi
-  done
-}
 
-install_all() {
-  mapfile -t candidates < <(list_candidates)
-  if [[ ${#candidates[@]} -eq 0 ]]; then
-    echo "No candidate scripts found in the current directory or subfolders."
-    exit 1
-  fi
-  for f in "${candidates[@]}"; do
-    install_file "$f"
-  done
-}
+    cat >> "$bashrc" <<'EOF'
 
-# --- main ---
-if [[ ${#@} -eq 0 ]]; then
-  MODE="interactive"
-else
-  MODE=""
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      -a|--all) MODE="all"; shift ;;
-      -i|--interactive) MODE="interactive"; shift ;;
-      -u|--uninstall) MODE="uninstall"; shift ;;
-      -h|--help) usage; exit 0 ;;
-      *) echo "Unknown arg: $1"; usage; exit 1 ;;
-    esac
-  done
+# ============================================================
+# Freaky's Scripts - Bash Aliases
+# ============================================================
+
+if [ -d "$HOME/.bash_aliases.d" ]; then
+    for alias_file in "$HOME/.bash_aliases.d"/*.bash; do
+        [ -r "$alias_file" ] && source "$alias_file"
+    done
 fi
 
-SKIP_ALL_OVERWRITE=false
-prepare_bin_dir
+EOF
+
+    echo "Added Bash alias loader to ~/.bashrc"
+}
+
+
+# ============================================================
+# Discover Bash scripts
+# ============================================================
+
+list_scripts() {
+
+    find "$REPO_DIR/$REPO_SUBDIR" \
+        -type f \
+        ! -path "$REPO_DIR/$BASHRC_SUBDIR/*" \
+        ! -name "README*" \
+        ! -name "LICENSE*" \
+        ! -name "install" \
+        ! -name "install.sh" \
+        ! -name "uninstall" \
+        ! -name "uninstall.sh" \
+        \( \
+            -name "*.sh" \
+            -o -perm -111 \
+            -o -exec grep -Iq '^#!' {} \; \
+        \) \
+        -printf "%p\n" \
+        2>/dev/null |
+        sort
+}
+
+
+# ============================================================
+# Discover Bashrc / alias sections
+# ============================================================
+
+list_alias_sections() {
+
+    local alias_dir="$REPO_DIR/$BASHRC_SUBDIR"
+
+    [[ -d "$alias_dir" ]] || return 0
+
+    find "$alias_dir" \
+        -maxdepth 1 \
+        -type f \
+        \( -name "*.bash" -o -name "*.sh" \) \
+        -printf "%p\n" \
+        2>/dev/null |
+        sort
+}
+
+
+# ============================================================
+# Overwrite prompt
+# ============================================================
+
+prompt_overwrite() {
+
+    local target="$1"
+
+    if [[ ! -e "$target" ]]; then
+        return 0
+    fi
+
+    while true; do
+
+        read -rp \
+            "$target exists — overwrite? [y]es/[n]o/[s]kip-all: " \
+            answer
+
+        case "$answer" in
+
+            [Yy]*)
+                return 0
+                ;;
+
+            [Nn]*)
+                return 1
+                ;;
+
+            [Ss]*)
+                return 2
+                ;;
+
+            *)
+                echo "Please answer y, n, or s."
+                ;;
+
+        esac
+
+    done
+}
+
+
+# ============================================================
+# Install script
+# ============================================================
+
+install_script() {
+
+    local src="$1"
+    local name
+    local dest
+
+    name="$(basename "$src")"
+    dest="$BIN_DIR/$name"
+
+    if [[ "$SKIP_ALL_OVERWRITE" == "true" ]]; then
+
+        echo "Skipping: $name"
+
+        return
+    fi
+
+    if [[ -e "$dest" ]]; then
+
+        prompt_overwrite "$dest"
+
+        case $? in
+
+            0)
+                ;;
+
+            1)
+                echo "Skipping: $name"
+                return
+                ;;
+
+            2)
+                SKIP_ALL_OVERWRITE=true
+                echo "Skipping: $name"
+                return
+                ;;
+
+        esac
+    fi
+
+    cp -p "$src" "$dest"
+
+    chmod +x "$dest"
+
+    echo -e "${GREEN}Installed:${NC} $name"
+}
+
+
+# ============================================================
+# Alias dependency definitions
+# ============================================================
+
+declare -A ALIAS_DEPENDENCY
+
+# Tools
+ALIAS_DEPENDENCY["cat"]="batcat"
+ALIAS_DEPENDENCY["wt"]="curl"
+ALIAS_DEPENDENCY["speed"]="curl python3"
+
+# Networking
+ALIAS_DEPENDENCY["lip"]="hostname"
+ALIAS_DEPENDENCY["wip"]="curl"
+ALIAS_DEPENDENCY["ports"]="ss"
+ALIAS_DEPENDENCY["conns"]="ss"
+ALIAS_DEPENDENCY["openports"]="ss"
+ALIAS_DEPENDENCY["established"]="ss"
+ALIAS_DEPENDENCY["pingg"]="ping"
+ALIAS_DEPENDENCY["pingc"]="ping"
+ALIAS_DEPENDENCY["ipa"]="ip"
+ALIAS_DEPENDENCY["route"]="ip"
+ALIAS_DEPENDENCY["dns"]="dig"
+ALIAS_DEPENDENCY["digg"]="dig"
+ALIAS_DEPENDENCY["headers"]="curl"
+ALIAS_DEPENDENCY["trace"]="traceroute"
+
+# System
+ALIAS_DEPENDENCY["top"]="htop"
+ALIAS_DEPENDENCY["pci"]="lspci"
+ALIAS_DEPENDENCY["usb"]="lsusb"
+
+# Storage
+ALIAS_DEPENDENCY["df"]="df"
+ALIAS_DEPENDENCY["disk"]="df"
+ALIAS_DEPENDENCY["disks"]="lsblk"
+ALIAS_DEPENDENCY["du"]="du"
+ALIAS_DEPENDENCY["bigfiles"]="du"
+ALIAS_DEPENDENCY["mounts"]="mount column"
+
+# SSH
+ALIAS_DEPENDENCY["sshlist"]="ssh-add"
+ALIAS_DEPENDENCY["ssha"]="ssh-agent ssh-add"
+ALIAS_DEPENDENCY["sshconfig"]="nano"
+
+# APT
+ALIAS_DEPENDENCY["apt"]="apt"
+ALIAS_DEPENDENCY["update"]="apt"
+ALIAS_DEPENDENCY["install"]="apt"
+ALIAS_DEPENDENCY["aptsearch"]="apt"
+ALIAS_DEPENDENCY["clean"]="apt"
+
+# Systemd
+ALIAS_DEPENDENCY["services"]="systemctl"
+ALIAS_DEPENDENCY["failed"]="systemctl"
+ALIAS_DEPENDENCY["sstatus"]="systemctl"
+ALIAS_DEPENDENCY["srestart"]="systemctl"
+ALIAS_DEPENDENCY["sstart"]="systemctl"
+ALIAS_DEPENDENCY["sstop"]="systemctl"
+ALIAS_DEPENDENCY["senable"]="systemctl"
+ALIAS_DEPENDENCY["sdisable"]="systemctl"
+
+# Logs
+ALIAS_DEPENDENCY["logs"]="journalctl"
+ALIAS_DEPENDENCY["sjournal"]="journalctl"
+ALIAS_DEPENDENCY["todaylogs"]="journalctl"
+ALIAS_DEPENDENCY["bootlogs"]="journalctl"
+ALIAS_DEPENDENCY["klogs"]="journalctl"
+ALIAS_DEPENDENCY["errors"]="journalctl"
+
+# Docker
+ALIAS_DEPENDENCY["dps"]="docker"
+ALIAS_DEPENDENCY["dpsa"]="docker"
+ALIAS_DEPENDENCY["dimg"]="docker"
+ALIAS_DEPENDENCY["dlog"]="docker"
+ALIAS_DEPENDENCY["dstats"]="docker"
+ALIAS_DEPENDENCY["dtop"]="docker"
+ALIAS_DEPENDENCY["dstart"]="docker"
+ALIAS_DEPENDENCY["dstop"]="docker"
+ALIAS_DEPENDENCY["drestart"]="docker"
+ALIAS_DEPENDENCY["drm"]="docker"
+ALIAS_DEPENDENCY["dockerdu"]="docker"
+ALIAS_DEPENDENCY["dclean"]="docker"
+
+ALIAS_DEPENDENCY["dcup"]="docker"
+ALIAS_DEPENDENCY["dcdown"]="docker"
+ALIAS_DEPENDENCY["dcrestart"]="docker"
+ALIAS_DEPENDENCY["dcps"]="docker"
+ALIAS_DEPENDENCY["dclog"]="docker"
+ALIAS_DEPENDENCY["dcpull"]="docker"
+ALIAS_DEPENDENCY["dcupdate"]="docker"
+ALIAS_DEPENDENCY["dcrebuild"]="docker"
+
+# Alias editor
+ALIAS_DEPENDENCY["aliases"]="nano"
+
+
+# ============================================================
+# Dependency checker
+# ============================================================
+
+check_dependency() {
+
+    local dependencies="$1"
+    local dependency
+
+    for dependency in $dependencies; do
+
+        if ! command -v "$dependency" >/dev/null 2>&1; then
+
+            return 1
+
+        fi
+
+    done
+
+    return 0
+}
+
+
+# ============================================================
+# Get alias name
+# ============================================================
+
+get_alias_name() {
+
+    local line="$1"
+
+    echo "$line" |
+        sed -nE \
+        's/^[[:space:]]*alias[[:space:]]+([a-zA-Z0-9_-]+)=.*/\1/p'
+}
+
+
+# ============================================================
+# Check alias dependency
+# ============================================================
+
+check_alias_dependency() {
+
+    local alias_name="$1"
+
+    if [[ -z "${ALIAS_DEPENDENCY[$alias_name]+x}" ]]; then
+        return 0
+    fi
+
+    check_dependency "${ALIAS_DEPENDENCY[$alias_name]}"
+}
+
+
+# ============================================================
+# Install alias section
+# ============================================================
+
+install_alias_section() {
+
+    local src="$1"
+
+    local section_name
+    local dest
+    local temp_file
+
+    section_name="$(basename "$src")"
+    dest="$ALIAS_DIR/$section_name"
+
+    temp_file="$(mktemp)"
+
+    echo
+    echo "------------------------------------------"
+    echo "Checking: $section_name"
+    echo "------------------------------------------"
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+
+        # Blank lines
+        if [[ -z "$line" ]]; then
+            echo "$line" >> "$temp_file"
+            continue
+        fi
+
+        # Comments
+        if [[ "$line" =~ ^[[:space:]]*# ]]; then
+            echo "$line" >> "$temp_file"
+            continue
+        fi
+
+        # Alias
+        if [[ "$line" =~ ^[[:space:]]*alias[[:space:]] ]]; then
+
+            local alias_name
+
+            alias_name="$(get_alias_name "$line")"
+
+            if [[ -z "$alias_name" ]]; then
+                continue
+            fi
+
+            if check_alias_dependency "$alias_name"; then
+
+                echo "$line" >> "$temp_file"
+
+                echo -e \
+                    "  ${GREEN}✓${NC} $alias_name"
+
+            else
+
+                echo -e \
+                    "  ${YELLOW}✗${NC} $alias_name ${YELLOW}(dependency missing)${NC}"
+
+            fi
+
+            continue
+        fi
+
+        # Keep everything else
+        echo "$line" >> "$temp_file"
+
+    done < "$src"
+
+    if grep -qE '^[[:space:]]*alias[[:space:]]' "$temp_file"; then
+
+        mv "$temp_file" "$dest"
+
+        echo
+        echo -e "${GREEN}Installed:${NC} $section_name"
+
+    else
+
+        rm -f "$temp_file"
+
+        echo
+        echo -e "${YELLOW}No usable aliases found in:${NC} $section_name"
+
+    fi
+}
+
+
+# ============================================================
+# Script selection menu
+# ============================================================
+
+interactive_scripts() {
+
+    mapfile -t scripts < <(list_scripts)
+
+    if [[ ${#scripts[@]} -eq 0 ]]; then
+
+        echo
+        echo -e "${YELLOW}No Bash scripts found.${NC}"
+
+        return
+    fi
+
+    echo
+    echo "=========================================="
+    echo " Available Bash Scripts"
+    echo "=========================================="
+    echo
+
+    for i in "${!scripts[@]}"; do
+
+        local display
+
+        display="${scripts[$i]#"$REPO_DIR/"}"
+
+        printf "%3d) %s\n" \
+            "$((i + 1))" \
+            "$display"
+
+    done
+
+    echo
+    echo "Enter numbers separated by spaces,"
+    echo "'all' to install everything, or 'q' to quit."
+    echo
+
+    read -rp "Selection: " selection
+
+    [[ "$selection" == "q" ]] && return
+
+    if [[ "$selection" == "all" ]]; then
+
+        for script in "${scripts[@]}"; do
+            install_script "$script"
+        done
+
+        return
+    fi
+
+    for number in $selection; do
+
+        if [[ "$number" =~ ^[0-9]+$ ]] &&
+            (( number >= 1 && number <= ${#scripts[@]} )); then
+
+            install_script "${scripts[$((number - 1))]}"
+
+        else
+
+            echo "Invalid selection: $number"
+
+        fi
+
+    done
+}
+
+
+# ============================================================
+# Alias selection menu
+# ============================================================
+
+interactive_aliases() {
+
+    mapfile -t sections < <(list_alias_sections)
+
+    if [[ ${#sections[@]} -eq 0 ]]; then
+
+        echo
+        echo -e "${YELLOW}No Bashrc alias sections found.${NC}"
+        echo
+        echo "Expected location:"
+        echo "$REPO_DIR/$BASHRC_SUBDIR"
+        echo
+
+        return
+    fi
+
+    echo
+    echo "=========================================="
+    echo " Bash Alias Categories"
+    echo "=========================================="
+    echo
+
+    for i in "${!sections[@]}"; do
+
+        printf "%3d) %s\n" \
+            "$((i + 1))" \
+            "$(basename "${sections[$i]}")"
+
+    done
+
+    echo
+    echo "Enter numbers separated by spaces,"
+    echo "'all' to install everything, or 'q' to quit."
+    echo
+
+    read -rp "Selection: " selection
+
+    [[ "$selection" == "q" ]] && return
+
+    if [[ "$selection" == "all" ]]; then
+
+        for section in "${sections[@]}"; do
+            install_alias_section "$section"
+        done
+
+        ensure_bashrc_loader
+
+        return
+    fi
+
+    for number in $selection; do
+
+        if [[ "$number" =~ ^[0-9]+$ ]] &&
+            (( number >= 1 && number <= ${#sections[@]} )); then
+
+            install_alias_section "${sections[$((number - 1))]}"
+
+        else
+
+            echo "Invalid selection: $number"
+
+        fi
+
+    done
+
+    ensure_bashrc_loader
+}
+
+
+# ============================================================
+# Install everything
+# ============================================================
+
+install_all() {
+
+    echo
+    echo "=========================================="
+    echo " Installing All Bash Scripts"
+    echo "=========================================="
+
+    mapfile -t scripts < <(list_scripts)
+
+    if [[ ${#scripts[@]} -gt 0 ]]; then
+
+        for script in "${scripts[@]}"; do
+            install_script "$script"
+        done
+
+    else
+
+        echo "No scripts found."
+
+    fi
+
+
+    echo
+    echo "=========================================="
+    echo " Installing All Bash Aliases"
+    echo "=========================================="
+
+    mapfile -t sections < <(list_alias_sections)
+
+    if [[ ${#sections[@]} -gt 0 ]]; then
+
+        for section in "${sections[@]}"; do
+            install_alias_section "$section"
+        done
+
+        ensure_bashrc_loader
+
+    else
+
+        echo "No alias sections found."
+
+    fi
+}
+
+
+# ============================================================
+# Uninstall scripts
+# ============================================================
+
+uninstall_menu() {
+
+    if [[ ! -d "$BIN_DIR" ]]; then
+
+        echo "$BIN_DIR does not exist."
+        return
+
+    fi
+
+    mapfile -t files < <(
+        find "$BIN_DIR" \
+            -maxdepth 1 \
+            -type f \
+            -printf "%f\n" |
+        sort
+    )
+
+    if [[ ${#files[@]} -eq 0 ]]; then
+
+        echo "No installed scripts found."
+        return
+
+    fi
+
+    echo
+    echo "=========================================="
+    echo " Installed Scripts"
+    echo "=========================================="
+    echo
+
+    for i in "${!files[@]}"; do
+
+        printf "%3d) %s\n" \
+            "$((i + 1))" \
+            "${files[$i]}"
+
+    done
+
+    echo
+    echo "Enter numbers separated by spaces or 'all'."
+    echo
+
+    read -rp "Selection: " selection
+
+    if [[ "$selection" == "all" ]]; then
+
+        for file in "${files[@]}"; do
+
+            rm -f "$BIN_DIR/$file"
+
+            echo "Removed: $BIN_DIR/$file"
+
+        done
+
+        return
+    fi
+
+    for number in $selection; do
+
+        if [[ "$number" =~ ^[0-9]+$ ]] &&
+            (( number >= 1 && number <= ${#files[@]} )); then
+
+            local file
+
+            file="${files[$((number - 1))]}"
+
+            rm -f "$BIN_DIR/$file"
+
+            echo "Removed: $BIN_DIR/$file"
+
+        else
+
+            echo "Invalid selection: $number"
+
+        fi
+
+    done
+}
+
+
+# ============================================================
+# Main
+# ============================================================
+
+MODE="interactive"
+
+while [[ $# -gt 0 ]]; do
+
+    case "$1" in
+
+        -a|--all)
+            MODE="all"
+            shift
+            ;;
+
+        -s|--scripts)
+            MODE="scripts"
+            shift
+            ;;
+
+        -A|--aliases)
+            MODE="aliases"
+            shift
+            ;;
+
+        -u|--uninstall)
+            MODE="uninstall"
+            shift
+            ;;
+
+        -h|--help)
+            usage
+            exit 0
+            ;;
+
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+
+    esac
+
+done
+
+
+# ============================================================
+# Start
+# ============================================================
+
+echo
+echo "=========================================="
+echo "       ⚡ Freaky's Scripts"
+echo "=========================================="
+echo
+
+if [[ "$MODE" != "uninstall" ]]; then
+
+    check_requirements
+    download_repository
+    prepare_directories
+
+fi
+
+
 case "$MODE" in
-  interactive)
-    interactive_install
-    ensure_path
-    ;;
-  all)
-    install_all
-    ensure_path
-    ;;
-  uninstall)
-    uninstall_menu
-    ;;
-  *)
-    echo "Unknown mode: $MODE"; usage; exit 1
-    ;;
+
+    interactive)
+
+        interactive_scripts
+
+        echo
+        interactive_aliases
+
+        ensure_path
+
+        ;;
+
+    scripts)
+
+        interactive_scripts
+
+        ensure_path
+
+        ;;
+
+    aliases)
+
+        interactive_aliases
+
+        ;;
+
+    all)
+
+        install_all
+
+        ensure_path
+
+        ;;
+
+    uninstall)
+
+        uninstall_menu
+
+        ;;
+
 esac
 
-echo "Done. All selected scripts have been copied into: $BIN_DIR"
-echo "If you added PATH exports, open a new shell or source the rc file: e.g. source ~/.profile"
+
+echo
+echo "=========================================="
+echo -e "${GREEN} Installation complete!${NC}"
+echo "=========================================="
+echo
+echo "Scripts : $BIN_DIR"
+echo "Aliases : $ALIAS_DIR"
+echo
+
+if [[ "$MODE" != "uninstall" ]]; then
+
+    echo "To activate the aliases now:"
+    echo
+    echo "  source ~/.bashrc"
+    echo
+
+fi
