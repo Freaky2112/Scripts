@@ -5,8 +5,13 @@
 #
 # Freaky's Scripts Installer
 #
-# Downloads the latest scripts directly from GitHub.
-# Automatically discovers Bash scripts and Bashrc alias sections.
+# Supports:
+#   ./install
+#   curl ... | bash
+#
+# Automatically discovers:
+#   Bash scripts under Bash/
+#   Alias files under Bash/Bashrc/
 #
 
 set -euo pipefail
@@ -41,6 +46,7 @@ if [[ -t 1 ]]; then
     YELLOW='\033[1;33m'
     BLUE='\033[0;34m'
     CYAN='\033[0;36m'
+    MAGENTA='\033[0;35m'
     NC='\033[0m'
 else
     GREEN=''
@@ -48,6 +54,7 @@ else
     YELLOW=''
     BLUE=''
     CYAN=''
+    MAGENTA=''
     NC=''
 fi
 
@@ -66,50 +73,83 @@ trap cleanup EXIT
 
 
 # ============================================================
+# Interactive input
+#
+# This is important because the installer can be executed as:
+#
+# curl ... | bash
+#
+# In that situation stdin belongs to curl, so all user input
+# must come from /dev/tty.
+# ============================================================
+
+prompt() {
+
+    local message="$1"
+
+    if [[ ! -r /dev/tty ]]; then
+
+        echo
+        echo -e "${RED}No interactive terminal detected.${NC}"
+        echo
+        echo "Run the installer from a terminal."
+        echo
+
+        exit 1
+    fi
+
+    read -rp "$message" REPLY </dev/tty
+}
+
+
+# ============================================================
 # Usage
 # ============================================================
 
 usage() {
+
     cat <<EOF
 
-Freaky's Scripts Installer
+⚡ Freaky's Scripts Installer
 
 Usage:
+
   $0 [option]
 
 Options:
 
   -a, --all
-        Install all discovered Bash scripts and all alias sections.
+        Install all discovered Bash scripts
+        and all alias categories.
 
   -s, --scripts
-        Show the script selection menu.
+        Show the Bash script selection menu.
 
   -A, --aliases
         Show the Bash alias selection menu.
 
   -u, --uninstall
-        Uninstall scripts from ~/.local/bin.
+        Uninstall installed scripts.
 
   -h, --help
         Show this help.
 
 Examples:
 
+  ./install
+
+  ./install --all
+
   curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash
 
   curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash -s -- --all
-
-  curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash -s -- --scripts
-
-  curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash -s -- --aliases
 
 EOF
 }
 
 
 # ============================================================
-# Check required commands
+# Requirements
 # ============================================================
 
 check_requirements() {
@@ -117,19 +157,20 @@ check_requirements() {
     local missing=()
 
     command -v curl >/dev/null 2>&1 || missing+=("curl")
-    command -v tar  >/dev/null 2>&1 || missing+=("tar")
+    command -v tar >/dev/null 2>&1 || missing+=("tar")
 
     if [[ ${#missing[@]} -gt 0 ]]; then
 
         echo
         echo -e "${RED}Missing required commands:${NC}"
 
-        for cmd in "${missing[@]}"; do
-            echo "  - $cmd"
+        for command_name in "${missing[@]}"; do
+            echo "  - $command_name"
         done
 
         echo
         echo "Install the missing commands and try again."
+        echo
 
         exit 1
     fi
@@ -137,7 +178,7 @@ check_requirements() {
 
 
 # ============================================================
-# Download GitHub repository
+# Download repository
 # ============================================================
 
 download_repository() {
@@ -161,12 +202,14 @@ download_repository() {
 
     tar -xzf "$archive" -C "$TEMP_DIR"
 
-    REPO_DIR="$(find "$TEMP_DIR" \
-        -mindepth 1 \
-        -maxdepth 1 \
-        -type d \
-        -name 'Scripts-*' \
-        | head -n1)"
+    REPO_DIR="$(
+        find "$TEMP_DIR" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -name 'Scripts-*' |
+        head -n1
+    )"
 
     if [[ -z "$REPO_DIR" || ! -d "$REPO_DIR" ]]; then
 
@@ -199,7 +242,6 @@ prepare_directories() {
         mkdir -p "$BIN_DIR"
 
         echo "Created: $BIN_DIR"
-
     fi
 
     if [[ ! -d "$ALIAS_DIR" ]]; then
@@ -207,7 +249,6 @@ prepare_directories() {
         mkdir -p "$ALIAS_DIR"
 
         echo "Created: $ALIAS_DIR"
-
     fi
 }
 
@@ -220,23 +261,19 @@ ensure_path() {
 
     local profile="$HOME/.profile"
 
-    if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    if [[ ! -f "$profile" ]]; then
+        touch "$profile"
+    fi
 
-        if [[ ! -f "$profile" ]]; then
-            touch "$profile"
-        fi
+    if ! grep -Fq "$BIN_DIR" "$profile"; then
 
-        if ! grep -Fq "$BIN_DIR" "$profile"; then
-
-            cat >> "$profile" <<EOF
+        cat >> "$profile" <<EOF
 
 # Added by Freaky's Scripts installer
 export PATH="$BIN_DIR:\$PATH"
 EOF
 
-            echo "Added $BIN_DIR to ~/.profile"
-
-        fi
+        echo "Added $BIN_DIR to ~/.profile"
     fi
 }
 
@@ -276,7 +313,7 @@ EOF
 
 
 # ============================================================
-# Discover Bash scripts
+# Discover scripts
 # ============================================================
 
 list_scripts() {
@@ -302,7 +339,7 @@ list_scripts() {
 
 
 # ============================================================
-# Discover Bashrc / alias sections
+# Discover alias sections
 # ============================================================
 
 list_alias_sections() {
@@ -335,11 +372,9 @@ prompt_overwrite() {
 
     while true; do
 
-        read -rp \
-            "$target exists — overwrite? [y]es/[n]o/[s]kip-all: " \
-            answer
+        prompt "$target exists — overwrite? [y]es/[n]o/[s]kip-all: "
 
-        case "$answer" in
+        case "$REPLY" in
 
             [Yy]*)
                 return 0
@@ -410,12 +445,12 @@ install_script() {
 
     chmod +x "$dest"
 
-    echo -e "${GREEN}Installed:${NC} $name"
+    echo -e "${GREEN}✓ Installed:${NC} $name"
 }
 
 
 # ============================================================
-# Alias dependency definitions
+# Alias dependencies
 # ============================================================
 
 declare -A ALIAS_DEPENDENCY
@@ -425,7 +460,7 @@ ALIAS_DEPENDENCY["cat"]="batcat"
 ALIAS_DEPENDENCY["wt"]="curl"
 ALIAS_DEPENDENCY["speed"]="curl python3"
 
-# Networking
+# Network
 ALIAS_DEPENDENCY["lip"]="hostname"
 ALIAS_DEPENDENCY["wip"]="curl"
 ALIAS_DEPENDENCY["ports"]="ss"
@@ -523,9 +558,7 @@ check_dependency() {
     for dependency in $dependencies; do
 
         if ! command -v "$dependency" >/dev/null 2>&1; then
-
             return 1
-
         fi
 
     done
@@ -542,9 +575,9 @@ get_alias_name() {
 
     local line="$1"
 
-    echo "$line" |
-        sed -nE \
-        's/^[[:space:]]*alias[[:space:]]+([a-zA-Z0-9_-]+)=.*/\1/p'
+    sed -nE \
+        's/^[[:space:]]*alias[[:space:]]+([a-zA-Z0-9_-]+)=.*/\1/p' \
+        <<< "$line"
 }
 
 
@@ -590,17 +623,21 @@ install_alias_section() {
 
         # Blank lines
         if [[ -z "$line" ]]; then
+
             echo "$line" >> "$temp_file"
+
             continue
         fi
 
         # Comments
         if [[ "$line" =~ ^[[:space:]]*# ]]; then
+
             echo "$line" >> "$temp_file"
+
             continue
         fi
 
-        # Alias
+        # Alias definitions
         if [[ "$line" =~ ^[[:space:]]*alias[[:space:]] ]]; then
 
             local alias_name
@@ -628,7 +665,7 @@ install_alias_section() {
             continue
         fi
 
-        # Keep everything else
+        # Keep other content
         echo "$line" >> "$temp_file"
 
     done < "$src"
@@ -645,14 +682,14 @@ install_alias_section() {
         rm -f "$temp_file"
 
         echo
-        echo -e "${YELLOW}No usable aliases found in:${NC} $section_name"
+        echo -e "${YELLOW}No usable aliases found:${NC} $section_name"
 
     fi
 }
 
 
 # ============================================================
-# Script selection menu
+# Script menu
 # ============================================================
 
 interactive_scripts() {
@@ -687,10 +724,11 @@ interactive_scripts() {
 
     echo
     echo "Enter numbers separated by spaces,"
-    echo "'all' to install everything, or 'q' to quit."
+    echo "'all' to install everything, or 'q' to go back."
     echo
 
-    read -rp "Selection: " selection
+    prompt "Selection: "
+    local selection="$REPLY"
 
     [[ "$selection" == "q" ]] && return
 
@@ -721,7 +759,7 @@ interactive_scripts() {
 
 
 # ============================================================
-# Alias selection menu
+# Alias menu
 # ============================================================
 
 interactive_aliases() {
@@ -733,7 +771,7 @@ interactive_aliases() {
         echo
         echo -e "${YELLOW}No Bashrc alias sections found.${NC}"
         echo
-        echo "Expected location:"
+        echo "Expected:"
         echo "$REPO_DIR/$BASHRC_SUBDIR"
         echo
 
@@ -756,10 +794,11 @@ interactive_aliases() {
 
     echo
     echo "Enter numbers separated by spaces,"
-    echo "'all' to install everything, or 'q' to quit."
+    echo "'all' to install everything, or 'q' to go back."
     echo
 
-    read -rp "Selection: " selection
+    prompt "Selection: "
+    local selection="$REPLY"
 
     [[ "$selection" == "q" ]] && return
 
@@ -794,56 +833,7 @@ interactive_aliases() {
 
 
 # ============================================================
-# Install everything
-# ============================================================
-
-install_all() {
-
-    echo
-    echo "=========================================="
-    echo " Installing All Bash Scripts"
-    echo "=========================================="
-
-    mapfile -t scripts < <(list_scripts)
-
-    if [[ ${#scripts[@]} -gt 0 ]]; then
-
-        for script in "${scripts[@]}"; do
-            install_script "$script"
-        done
-
-    else
-
-        echo "No scripts found."
-
-    fi
-
-
-    echo
-    echo "=========================================="
-    echo " Installing All Bash Aliases"
-    echo "=========================================="
-
-    mapfile -t sections < <(list_alias_sections)
-
-    if [[ ${#sections[@]} -gt 0 ]]; then
-
-        for section in "${sections[@]}"; do
-            install_alias_section "$section"
-        done
-
-        ensure_bashrc_loader
-
-    else
-
-        echo "No alias sections found."
-
-    fi
-}
-
-
-# ============================================================
-# Uninstall scripts
+# Uninstall menu
 # ============================================================
 
 uninstall_menu() {
@@ -851,8 +841,8 @@ uninstall_menu() {
     if [[ ! -d "$BIN_DIR" ]]; then
 
         echo "$BIN_DIR does not exist."
-        return
 
+        return
     fi
 
     mapfile -t files < <(
@@ -866,8 +856,8 @@ uninstall_menu() {
     if [[ ${#files[@]} -eq 0 ]]; then
 
         echo "No installed scripts found."
-        return
 
+        return
     fi
 
     echo
@@ -888,7 +878,8 @@ uninstall_menu() {
     echo "Enter numbers separated by spaces or 'all'."
     echo
 
-    read -rp "Selection: " selection
+    prompt "Selection: "
+    local selection="$REPLY"
 
     if [[ "$selection" == "all" ]]; then
 
@@ -927,44 +918,194 @@ uninstall_menu() {
 
 
 # ============================================================
-# Main
+# Main menu
 # ============================================================
 
-MODE="interactive"
+main_menu() {
+
+    while true; do
+
+        clear 2>/dev/null || true
+
+        echo
+        echo "=========================================="
+        echo "       ⚡ Freaky's Scripts"
+        echo "=========================================="
+        echo
+        echo "Repository:"
+        echo "Freaky2112/Scripts"
+        echo
+        echo "  1) Install Scripts"
+        echo "  2) Install Alias Categories"
+        echo "  3) Install Everything"
+        echo "  4) Uninstall Scripts"
+        echo "  5) Exit"
+        echo
+
+        prompt "Selection: "
+
+        case "$REPLY" in
+
+            1)
+
+                interactive_scripts
+
+                ;;
+
+            2)
+
+                interactive_aliases
+
+                ;;
+
+            3)
+
+                install_all
+
+                ensure_path
+
+                ;;
+
+            4)
+
+                uninstall_menu
+
+                ;;
+
+            5)
+
+                echo
+                echo "Goodbye!"
+                echo
+
+                return
+                ;;
+
+            *)
+
+                echo
+                echo -e "${YELLOW}Invalid selection.${NC}"
+                sleep 1
+
+                ;;
+
+        esac
+
+    done
+}
+
+
+# ============================================================
+# Install everything
+# ============================================================
+
+install_all() {
+
+    echo
+    echo "=========================================="
+    echo " Installing All Bash Scripts"
+    echo "=========================================="
+    echo
+
+    mapfile -t scripts < <(list_scripts)
+
+    if [[ ${#scripts[@]} -gt 0 ]]; then
+
+        for script in "${scripts[@]}"; do
+            install_script "$script"
+        done
+
+    else
+
+        echo "No Bash scripts found."
+
+    fi
+
+
+    echo
+    echo "=========================================="
+    echo " Installing All Bash Aliases"
+    echo "=========================================="
+    echo
+
+    mapfile -t sections < <(list_alias_sections)
+
+    if [[ ${#sections[@]} -gt 0 ]]; then
+
+        for section in "${sections[@]}"; do
+            install_alias_section "$section"
+        done
+
+        ensure_bashrc_loader
+
+    else
+
+        echo "No Bash alias sections found."
+
+    fi
+
+    ensure_path
+}
+
+
+# ============================================================
+# Parse command line
+# ============================================================
+
+MODE="menu"
 
 while [[ $# -gt 0 ]]; do
 
     case "$1" in
 
         -a|--all)
+
             MODE="all"
+
             shift
+
             ;;
 
         -s|--scripts)
+
             MODE="scripts"
+
             shift
+
             ;;
 
         -A|--aliases)
+
             MODE="aliases"
+
             shift
+
             ;;
 
         -u|--uninstall)
+
             MODE="uninstall"
+
             shift
+
             ;;
 
         -h|--help)
+
             usage
+
             exit 0
+
             ;;
 
         *)
+
             echo "Unknown option: $1"
+
             usage
+
             exit 1
+
             ;;
 
     esac
@@ -993,14 +1134,9 @@ fi
 
 case "$MODE" in
 
-    interactive)
+    menu)
 
-        interactive_scripts
-
-        echo
-        interactive_aliases
-
-        ensure_path
+        main_menu
 
         ;;
 
@@ -1022,8 +1158,6 @@ case "$MODE" in
 
         install_all
 
-        ensure_path
-
         ;;
 
     uninstall)
@@ -1037,7 +1171,7 @@ esac
 
 echo
 echo "=========================================="
-echo -e "${GREEN} Installation complete!${NC}"
+echo -e "${GREEN} Done!${NC}"
 echo "=========================================="
 echo
 echo "Scripts : $BIN_DIR"
@@ -1046,7 +1180,7 @@ echo
 
 if [[ "$MODE" != "uninstall" ]]; then
 
-    echo "To activate the aliases now:"
+    echo "To activate your aliases:"
     echo
     echo "  source ~/.bashrc"
     echo
