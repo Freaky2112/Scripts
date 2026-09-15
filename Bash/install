@@ -576,7 +576,7 @@ get_alias_name() {
     local line="$1"
 
     sed -nE \
-        's/^[[:space:]]*alias[[:space:]]+([a-zA-Z0-9_-]+)=.*/\1/p' \
+        's/^[[:space:]]*alias[[:space:]]+([^=[space:]]+)=.*/\1/p' \
         <<< "$line"
 }
 
