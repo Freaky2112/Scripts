@@ -75,11 +75,12 @@ trap cleanup EXIT
 # ============================================================
 # Interactive input
 #
-# Important for:
+# This is important because the installer can be executed as:
 #
 # curl ... | bash
 #
-# stdin belongs to curl, so user input comes from /dev/tty.
+# In that situation stdin belongs to curl, so all user input
+# must come from /dev/tty.
 # ============================================================
 
 prompt() {
@@ -138,10 +139,6 @@ Examples:
   ./install
 
   ./install --all
-
-  ./install --scripts
-
-  ./install --aliases
 
   curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash
 
@@ -337,7 +334,7 @@ list_scripts() {
         \) \
         -printf "%p\n" \
         2>/dev/null |
-    sort
+        sort
 }
 
 
@@ -357,7 +354,7 @@ list_alias_sections() {
         \( -name "*.bash" -o -name "*.sh" \) \
         -printf "%p\n" \
         2>/dev/null |
-    sort
+        sort
 }
 
 
@@ -458,18 +455,12 @@ install_script() {
 
 declare -A ALIAS_DEPENDENCY
 
-# ------------------------------------------------------------
 # Tools
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["cat"]="batcat"
 ALIAS_DEPENDENCY["wt"]="curl"
 ALIAS_DEPENDENCY["speed"]="curl python3"
 
-# ------------------------------------------------------------
 # Network
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["lip"]="hostname"
 ALIAS_DEPENDENCY["wip"]="curl"
 ALIAS_DEPENDENCY["ports"]="ss"
@@ -485,18 +476,12 @@ ALIAS_DEPENDENCY["digg"]="dig"
 ALIAS_DEPENDENCY["headers"]="curl"
 ALIAS_DEPENDENCY["trace"]="traceroute"
 
-# ------------------------------------------------------------
 # System
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["top"]="htop"
 ALIAS_DEPENDENCY["pci"]="lspci"
 ALIAS_DEPENDENCY["usb"]="lsusb"
 
-# ------------------------------------------------------------
 # Storage
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["df"]="df"
 ALIAS_DEPENDENCY["disk"]="df"
 ALIAS_DEPENDENCY["disks"]="lsblk"
@@ -504,28 +489,19 @@ ALIAS_DEPENDENCY["du"]="du"
 ALIAS_DEPENDENCY["bigfiles"]="du"
 ALIAS_DEPENDENCY["mounts"]="mount column"
 
-# ------------------------------------------------------------
 # SSH
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["sshlist"]="ssh-add"
 ALIAS_DEPENDENCY["ssha"]="ssh-agent ssh-add"
 ALIAS_DEPENDENCY["sshconfig"]="nano"
 
-# ------------------------------------------------------------
 # APT
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["apt"]="apt"
 ALIAS_DEPENDENCY["update"]="apt"
 ALIAS_DEPENDENCY["install"]="apt"
 ALIAS_DEPENDENCY["aptsearch"]="apt"
 ALIAS_DEPENDENCY["clean"]="apt"
 
-# ------------------------------------------------------------
 # Systemd
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["services"]="systemctl"
 ALIAS_DEPENDENCY["failed"]="systemctl"
 ALIAS_DEPENDENCY["sstatus"]="systemctl"
@@ -535,10 +511,7 @@ ALIAS_DEPENDENCY["sstop"]="systemctl"
 ALIAS_DEPENDENCY["senable"]="systemctl"
 ALIAS_DEPENDENCY["sdisable"]="systemctl"
 
-# ------------------------------------------------------------
 # Logs
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["logs"]="journalctl"
 ALIAS_DEPENDENCY["sjournal"]="journalctl"
 ALIAS_DEPENDENCY["todaylogs"]="journalctl"
@@ -546,10 +519,7 @@ ALIAS_DEPENDENCY["bootlogs"]="journalctl"
 ALIAS_DEPENDENCY["klogs"]="journalctl"
 ALIAS_DEPENDENCY["errors"]="journalctl"
 
-# ------------------------------------------------------------
 # Docker
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["dps"]="docker"
 ALIAS_DEPENDENCY["dpsa"]="docker"
 ALIAS_DEPENDENCY["dimg"]="docker"
@@ -563,20 +533,16 @@ ALIAS_DEPENDENCY["drm"]="docker"
 ALIAS_DEPENDENCY["dockerdu"]="docker"
 ALIAS_DEPENDENCY["dclean"]="docker"
 
-# Docker Compose
-ALIAS_DEPENDENCY["dcup"]="docker compose"
-ALIAS_DEPENDENCY["dcdown"]="docker compose"
-ALIAS_DEPENDENCY["dcrestart"]="docker compose"
-ALIAS_DEPENDENCY["dcps"]="docker compose"
-ALIAS_DEPENDENCY["dclog"]="docker compose"
-ALIAS_DEPENDENCY["dcpull"]="docker compose"
-ALIAS_DEPENDENCY["dcupdate"]="docker compose"
-ALIAS_DEPENDENCY["dcrebuild"]="docker compose"
+ALIAS_DEPENDENCY["dcup"]="docker"
+ALIAS_DEPENDENCY["dcdown"]="docker"
+ALIAS_DEPENDENCY["dcrestart"]="docker"
+ALIAS_DEPENDENCY["dcps"]="docker"
+ALIAS_DEPENDENCY["dclog"]="docker"
+ALIAS_DEPENDENCY["dcpull"]="docker"
+ALIAS_DEPENDENCY["dcupdate"]="docker"
+ALIAS_DEPENDENCY["dcrebuild"]="docker"
 
-# ------------------------------------------------------------
 # Alias editor
-# ------------------------------------------------------------
-
 ALIAS_DEPENDENCY["aliases"]="nano"
 
 
@@ -591,29 +557,11 @@ check_dependency() {
 
     for dependency in $dependencies; do
 
-        # Special handling for Docker Compose
-        if [[ "$dependency" == "docker" && "$dependencies" == *"docker compose"* ]]; then
-            continue
-        fi
-
         if ! command -v "$dependency" >/dev/null 2>&1; then
             return 1
         fi
 
     done
-
-    # Check Docker Compose as a command
-    if [[ "$dependencies" == "docker compose" ]]; then
-
-        if ! command -v docker >/dev/null 2>&1; then
-            return 1
-        fi
-
-        if ! docker compose version >/dev/null 2>&1; then
-            return 1
-        fi
-
-    fi
 
     return 0
 }
@@ -621,15 +569,6 @@ check_dependency() {
 
 # ============================================================
 # Get alias name
-#
-# Supports aliases such as:
-#
-#   alias ll="ls -lah"
-#   alias psg="ps aux | grep"
-#   alias ..="cd .."
-#   alias ...="cd ../.."
-#
-# The previous regex did not allow '.' in alias names.
 # ============================================================
 
 get_alias_name() {
@@ -637,7 +576,7 @@ get_alias_name() {
     local line="$1"
 
     sed -nE \
-        's/^[[:space:]]*alias[[:space:]]+([^=[:space:]]+)=.*/\1/p' \
+        's/^[[:space:]]*alias[[:space:]]+([^=[space:]]+)=.*/\1/p' \
         <<< "$line"
 }
 
@@ -650,16 +589,6 @@ check_alias_dependency() {
 
     local alias_name="$1"
 
-    # No dependency listed = alias is always allowed.
-    #
-    # This includes:
-    #
-    #   ..
-    #   ...
-    #   ll
-    #   home
-    #   cwd
-    #
     if [[ -z "${ALIAS_DEPENDENCY[$alias_name]+x}" ]]; then
         return 0
     fi
@@ -715,13 +644,7 @@ install_alias_section() {
 
             alias_name="$(get_alias_name "$line")"
 
-            # If we can't determine the alias name,
-            # don't silently install it.
             if [[ -z "$alias_name" ]]; then
-
-                echo -e \
-                    "  ${YELLOW}✗${NC} Unable to determine alias name"
-
                 continue
             fi
 
@@ -815,8 +738,6 @@ interactive_scripts() {
             install_script "$script"
         done
 
-        ensure_path
-
         return
     fi
 
@@ -834,8 +755,6 @@ interactive_scripts() {
         fi
 
     done
-
-    ensure_path
 }
 
 
@@ -1028,32 +947,46 @@ main_menu() {
         case "$REPLY" in
 
             1)
+
                 interactive_scripts
+
                 ;;
 
             2)
+
                 interactive_aliases
+
                 ;;
 
             3)
+
                 install_all
+
+                ensure_path
+
                 ;;
 
             4)
+
                 uninstall_menu
+
                 ;;
 
             5)
+
                 echo
                 echo "Goodbye!"
                 echo
+
                 return
                 ;;
 
             *)
+
                 echo
                 echo -e "${YELLOW}Invalid selection.${NC}"
                 sleep 1
+
                 ;;
 
         esac
@@ -1128,38 +1061,51 @@ while [[ $# -gt 0 ]]; do
         -a|--all)
 
             MODE="all"
+
             shift
+
             ;;
 
         -s|--scripts)
 
             MODE="scripts"
+
             shift
+
             ;;
 
         -A|--aliases)
 
             MODE="aliases"
+
             shift
+
             ;;
 
         -u|--uninstall)
 
             MODE="uninstall"
+
             shift
+
             ;;
 
         -h|--help)
 
             usage
+
             exit 0
+
             ;;
 
         *)
 
             echo "Unknown option: $1"
+
             usage
+
             exit 1
+
             ;;
 
     esac
@@ -1191,26 +1137,33 @@ case "$MODE" in
     menu)
 
         main_menu
+
         ;;
 
     scripts)
 
         interactive_scripts
+
+        ensure_path
+
         ;;
 
     aliases)
 
         interactive_aliases
+
         ;;
 
     all)
 
         install_all
+
         ;;
 
     uninstall)
 
         uninstall_menu
+
         ;;
 
 esac
