@@ -5,21 +5,6 @@
 #
 # Freaky's Scripts Installer
 #
-# Supports:
-#
-#   ./install
-#   ./install --all
-#   ./install --scripts
-#   ./install --aliases
-#   ./install --uninstall
-#
-#   curl -fsSL https://raw.githubusercontent.com/Freaky2112/Scripts/main/Bash/install | bash
-#
-# Automatically discovers:
-#
-#   Bash scripts under Bash/
-#   Alias categories under Bash/Bashrc/
-#
 
 set -euo pipefail
 
@@ -81,6 +66,22 @@ trap cleanup EXIT
 
 
 # ============================================================
+# Pause
+# ============================================================
+
+pause() {
+
+    echo
+
+    if [[ -r /dev/tty ]]; then
+        read -rp "Press ENTER to continue..." </dev/tty
+    fi
+
+    echo
+}
+
+
+# ============================================================
 # Banner
 # ============================================================
 
@@ -97,7 +98,10 @@ banner() {
 # ============================================================
 # Input
 #
-# Required because curl | bash uses stdin for curl.
+# /dev/tty is used so that interactive prompts work with:
+#
+# curl ... | bash
+#
 # ============================================================
 
 ask() {
@@ -108,8 +112,6 @@ ask() {
 
         echo
         echo -e "${RED}No interactive terminal detected.${NC}"
-        echo
-        echo "Run this installer from an interactive terminal."
         echo
 
         exit 1
@@ -435,20 +437,6 @@ install_script() {
 
 # ============================================================
 # Alias dependency map
-#
-# Aliases not listed here have NO dependency requirement.
-#
-# This is intentional.
-#
-# For example:
-#
-#   ..
-#   ...
-#   ll
-#   home
-#   cwd
-#
-# are installed automatically.
 # ============================================================
 
 declare -A ALIAS_DEPENDENCY
@@ -553,7 +541,7 @@ has_dependency() {
 
     local dependency="$1"
 
-    # Docker Compose is a special case.
+    # Docker Compose
     if [[ "$dependency" == "docker compose" ]]; then
 
         command -v docker >/dev/null 2>&1 &&
@@ -575,7 +563,7 @@ alias_has_dependencies() {
     local alias_name="$1"
     local dependencies
 
-    # No dependency = OK
+    # Alias has no dependency requirement
     if [[ -z "${ALIAS_DEPENDENCY[$alias_name]+exists}" ]]; then
         return 0
     fi
@@ -584,13 +572,21 @@ alias_has_dependencies() {
 
     local dependency
 
+    # Use spaces for dependency splitting
+    local old_ifs="$IFS"
+    IFS=' '
+
     for dependency in $dependencies; do
 
         if ! has_dependency "$dependency"; then
+
+            IFS="$old_ifs"
             return 1
         fi
 
     done
+
+    IFS="$old_ifs"
 
     return 0
 }
@@ -598,16 +594,6 @@ alias_has_dependencies() {
 
 # ============================================================
 # Get alias name
-#
-# This supports:
-#
-#   alias ..
-#   alias ...
-#   alias ll
-#   alias psg
-#   alias aliases-list
-#
-# The alias itself is NEVER modified.
 # ============================================================
 
 get_alias_name() {
@@ -617,9 +603,18 @@ get_alias_name() {
     line="${line#*alias }"
     line="${line%%=*}"
 
-    # Trim whitespace
+    # Trim leading whitespace
     line="${line#"${line%%[![:space:]]*}"}"
+
+    # Trim trailing whitespace
     line="${line%"${line##*[![:space:]]}"}"
+
+    # Remove optional quotes around alias name
+    line="${line#\"}"
+    line="${line%\"}"
+
+    line="${line#\'}"
+    line="${line%\'}"
 
     printf '%s\n' "$line"
 }
@@ -628,16 +623,13 @@ get_alias_name() {
 # ============================================================
 # Install aliases
 #
-# IMPORTANT:
+# Alias lines are copied EXACTLY as they appear.
 #
-# We copy the original line exactly.
-#
-# This means:
+# This allows:
 #
 #   alias ..="cd .."
 #   alias ...="cd ../.."
 #
-# are preserved exactly as they appear in GitHub.
 # ============================================================
 
 install_alias_category() {
@@ -647,6 +639,8 @@ install_alias_category() {
     local name
     local destination
     local temporary
+    local line
+    local alias_name
 
     name="$(basename "$source")"
     destination="$ALIAS_DIR/$name"
@@ -688,10 +682,9 @@ install_alias_category() {
                 continue
             fi
 
-            # Check dependencies
             if alias_has_dependencies "$alias_name"; then
 
-                # COPY THE ORIGINAL LINE EXACTLY
+                # Keep the original alias untouched
                 printf '%s\n' "$line" >> "$temporary"
 
                 echo -e \
@@ -707,13 +700,12 @@ install_alias_category() {
             continue
         fi
 
-        # Preserve everything else
+        # Preserve anything else
         printf '%s\n' "$line" >> "$temporary"
 
     done < "$source"
 
 
-    # Make sure we actually have aliases
     if grep -qE '^[[:space:]]*alias[[:space:]]' "$temporary"; then
 
         if should_overwrite "$destination"; then
@@ -1061,18 +1053,22 @@ main_menu() {
 
             1)
                 script_menu
+                pause
                 ;;
 
             2)
                 alias_menu
+                pause
                 ;;
 
             3)
                 install_everything
+                pause
                 ;;
 
             4)
                 uninstall_menu
+                pause
                 ;;
 
             5)
@@ -1089,9 +1085,6 @@ main_menu() {
                 ;;
 
         esac
-
-        echo
-        ask "Press ENTER to continue..."
 
     done
 }
@@ -1170,18 +1163,22 @@ case "$MODE" in
 
     scripts)
         script_menu
+        pause
         ;;
 
     aliases)
         alias_menu
+        pause
         ;;
 
     all)
         install_everything
+        pause
         ;;
 
     uninstall)
         uninstall_menu
+        pause
         ;;
 
 esac
