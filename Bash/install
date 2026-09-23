@@ -20,6 +20,7 @@ GITHUB_BRANCH="main"
 
 REPO_SUBDIR="Bash"
 ALIAS_SUBDIR="Bash/Bashrc"
+BASHRC_FILE="bash"
 
 BIN_DIR="$HOME/.local/bin"
 ALIAS_DIR="$HOME/.bash_aliases.d"
@@ -138,13 +139,16 @@ Usage:
 Options:
 
   -a, --all
-      Install all scripts and aliases.
+      Install all scripts, bashrc, and aliases.
 
   -s, --scripts
       Install selected Bash scripts.
 
   -A, --aliases
       Install selected alias categories.
+
+  -b, --bashrc
+      Install/replace your ~/.bashrc (backs up the existing one first).
 
   -u, --uninstall
       Remove scripts installed in ~/.local/bin.
@@ -161,6 +165,8 @@ Examples:
   ./install --scripts
 
   ./install --aliases
+
+  ./install --bashrc
 
   curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/Bash/install | bash
 
@@ -432,6 +438,58 @@ install_script() {
     chmod +x "$destination"
 
     echo -e "  ${GREEN}✓ Installed:${NC} $name"
+}
+
+
+# ============================================================
+# Install bashrc
+# ============================================================
+
+install_bashrc() {
+
+    local source="$REPO_DIR/$ALIAS_SUBDIR/$BASHRC_FILE"
+    local destination="$HOME/.bashrc"
+    local backup
+
+    if [[ ! -f "$source" ]]; then
+
+        echo
+        echo -e "${YELLOW}No bashrc found in repository, skipping.${NC}"
+
+        return
+    fi
+
+    echo
+    echo "------------------------------------------"
+    echo " Bashrc"
+    echo "------------------------------------------"
+
+    if [[ "$SKIP_ALL" == true ]]; then
+
+        echo "  Skipped: bashrc"
+
+        return
+    fi
+
+    if ! should_overwrite "$destination"; then
+
+        echo -e "  ${YELLOW}Skipped:${NC} bashrc"
+
+        return
+    fi
+
+    if [[ -e "$destination" ]]; then
+
+        backup="$destination.bak.$(date +%Y%m%d%H%M%S)"
+
+        cp -p "$destination" "$backup"
+
+        echo -e "  ${GREEN}✓ Backed up:${NC} $(basename "$backup")"
+    fi
+
+    cp -p "$source" "$destination"
+
+    echo -e "  ${GREEN}✓ Installed:${NC} bashrc"
 }
 
 
@@ -916,6 +974,9 @@ install_everything() {
     fi
 
 
+    install_bashrc
+
+
     echo
     echo "Alias Categories:"
     echo
@@ -1042,9 +1103,10 @@ main_menu() {
         echo
         echo "  1) Install Scripts"
         echo "  2) Install Alias Categories"
-        echo "  3) Install Everything"
-        echo "  4) Uninstall Scripts"
-        echo "  5) Exit"
+        echo "  3) Install Bashrc"
+        echo "  4) Install Everything"
+        echo "  5) Uninstall Scripts"
+        echo "  6) Exit"
         echo
 
         ask "Selection: "
@@ -1062,16 +1124,21 @@ main_menu() {
                 ;;
 
             3)
-                install_everything
+                install_bashrc
                 pause
                 ;;
 
             4)
-                uninstall_menu
+                install_everything
                 pause
                 ;;
 
             5)
+                uninstall_menu
+                pause
+                ;;
+
+            6)
                 echo
                 echo "Goodbye!"
                 echo
@@ -1112,6 +1179,11 @@ while [[ $# -gt 0 ]]; do
 
         -A|--aliases)
             MODE="aliases"
+            shift
+            ;;
+
+        -b|--bashrc)
+            MODE="bashrc"
             shift
             ;;
 
@@ -1171,6 +1243,11 @@ case "$MODE" in
         pause
         ;;
 
+    bashrc)
+        install_bashrc
+        pause
+        ;;
+
     all)
         install_everything
         pause
@@ -1205,3 +1282,6 @@ if [[ "$MODE" != "uninstall" ]]; then
     echo
 
 fi
+
+
+
