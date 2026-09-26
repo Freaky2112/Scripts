@@ -153,7 +153,7 @@ dstop container_name
 
 | Alias          | Command                 | Description               |
 | -------------- | ----------------------- | ------------------------- |
-| `cat`          | `batcat`                | Enhanced `cat`            |
+| `ccat`          | `batcat`                | Enhanced `cat`            |
 | `wt`           | `curl wttr.in`          | Terminal weather          |
 | `speed`        | `curl ... \| python3 -` | Internet speed test       |
 | `aliases`      | `nano ~/.bash_aliases`  | Edit aliases              |
