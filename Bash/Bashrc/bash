@@ -16,8 +16,9 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTCONTROL='ignoredups'
+HISTSIZE=5000
+HISTFILESIZE=5000
 
 # Set environement
 export EDITOR='nano'
